@@ -1,8 +1,9 @@
 mod acct_management;
+mod dynamo_db;
 mod users;
 
-pub fn add(left: u64, right: u64) -> u64 {
-    left + right
+pub fn create_user(name: &str, email: &str) {
+    users::User::new(name.to_string(), email.to_string());
 }
 
 #[cfg(test)]
@@ -11,7 +12,7 @@ mod tests {
 
     #[test]
     fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
+        //let result = add(2, 2);
+        //assert_eq!(result, 4);
     }
 }
