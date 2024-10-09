@@ -2,8 +2,8 @@
 
 This project contains source code and supporting files for a serverless application that you can deploy with the SAM CLI. It includes the following files and folders:
 
-- `rust_app/Cargo.toml` - Project configuration file.
-- `rust_app/src/main.rs` - Code for the application's Lambda function.
+- `kids-bank-app/Cargo.toml` - Project configuration file.
+- `kids-bank-app/src/main.rs` - Code for the application's Lambda function.
 - `template.yaml` - A template that defines the application's AWS resources.
 
 The application uses several AWS resources, including Lambda functions and an API Gateway API. These resources are defined in the `template.yaml` file in this project. You can update the template to add AWS resources through the same deployment process that updates your application code.
@@ -61,7 +61,7 @@ Build your application with the `sam build` command.
 kids-bank-sam$ sam build
 ```
 
-The SAM CLI builds the Rust app based on `rust_app/Cargo.toml`, creates a deployment package, and saves it in the `.aws-sam/build` folder.
+The SAM CLI builds the Rust app based on `kids-bank-app/Cargo.toml`, creates a deployment package, and saves it in the `.aws-sam/build` folder.
 
 Test a single function by invoking it directly with a test event. An event is a JSON document that represents the input that the function receives from the event source. Test events are included in the `events` folder in this project.
 
@@ -106,7 +106,7 @@ You can find more information and examples about filtering Lambda function logs 
 
 ## Tests
 
-Tests are defined alongside your lambda function code in the `rust_app/src` folder.
+Tests are defined alongside your lambda function code in the `kids-bank-app/src` folder.
 
 ```bash
 cargo test
