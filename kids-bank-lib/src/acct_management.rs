@@ -1,6 +1,10 @@
+use core::f64;
+use std::sync::atomic::AtomicU64;
+
 use crate::users::User;
 
 pub struct Account {
+    id: u64,
     user: User,
     balance: f64,
 }
@@ -12,9 +16,20 @@ enum AccountError {
     DepositError,
 }
 
+pub trait AccountHandler {
+    fn get_accounts() -> Result<Vec<Account>, AccountError>;
+    fn get_account(account_id: u64) -> Result<Account, AccountError>;
+    fn deposit(aaccount_id: u64) -> Result<f64, AccountError>;
+    fn withdraw(account_it: u64) -> Result<f64, AccountError>;
+}
+
 impl Account {
-    pub fn new(user: User) -> Account {
-        Account { user, balance: 0.0 }
+    pub fn new(user: User) -> Self {
+        Account {
+            id: Self::get_id(),
+            user,
+            balance: 0.0,
+        }
     }
 
     pub fn withdraw(&mut self, amount: f64) -> Result<f64, AccountError> {
@@ -38,6 +53,11 @@ impl Account {
 
         self.balance += amount;
         Ok(self.balance)
+    }
+
+    fn get_id() -> u64 {
+        static COUNTER: AtomicU64 = AtomicU64::new(1);
+        COUNTER.fetch_add(1, std::sync::atomic::Ordering::Relaxed)
     }
 }
 
