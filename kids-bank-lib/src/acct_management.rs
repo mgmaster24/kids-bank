@@ -10,17 +10,12 @@ pub struct Account {
 }
 
 #[derive(Debug, PartialEq, Eq)]
-enum AccountError {
+pub enum AccountError {
     Overdraft,
     NegativeAmount,
     DepositError,
-}
-
-pub trait AccountHandler {
-    fn get_accounts() -> Result<Vec<Account>, AccountError>;
-    fn get_account(account_id: u64) -> Result<Account, AccountError>;
-    fn deposit(aaccount_id: u64) -> Result<f64, AccountError>;
-    fn withdraw(account_it: u64) -> Result<f64, AccountError>;
+    AccountExists,
+    DoesNotExist,
 }
 
 impl Account {
@@ -70,6 +65,10 @@ mod tests {
         let user = User::new("Test User".to_string(), "TestEmail@test.com".to_string());
         let acct = Account::new(user);
         assert_eq!(acct.balance, 0.0);
+
+        let user2 = User::new("Test User2".to_string(), "TestEmail2@test.com".to_string());
+        let acct2 = Account::new(user2);
+        assert_ne!(acct.id, acct2.id);
     }
 
     #[test]

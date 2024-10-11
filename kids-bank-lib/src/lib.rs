@@ -1,5 +1,4 @@
 mod acct_management;
-mod dynamo_db;
 mod users;
 
 pub fn create_user_account(name: &str, email: &str) -> Result<acct_management::Account, String> {

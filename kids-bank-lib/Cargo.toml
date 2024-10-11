@@ -1,5 +1,5 @@
 [package]
-name = "kid-bank-lib"
+name = "kids-bank-lib"
 version = "0.1.0"
 edition = "2021"
 
