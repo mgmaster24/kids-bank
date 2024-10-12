@@ -3,7 +3,7 @@ Transform: AWS::Serverless-2016-10-31
 Description: >
   kids-bank-sam
 
-  Sample SAM Template for kids-bank-sam
+  The serverless application for Kids Bank.  Will provide a CRUD application for kids account handling
 
 # More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
 Globals:
@@ -13,7 +13,7 @@ Globals:
 
 
 Resources:
-  HelloWorldFunction:
+  CreateAccount:
     Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
     Metadata:
       BuildMethod: rust-cargolambda # More info about Cargo Lambda: https://github.com/cargo-lambda/cargo-lambda
@@ -24,11 +24,11 @@ Resources:
       Architectures:
         - x86_64
       Events:
-        HelloWorld:
+        CreateAccount:
           Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
           Properties:
-            Path: /hello
-            Method: get
+            Path: /create
+            Method: put
 
 Outputs:
   # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function

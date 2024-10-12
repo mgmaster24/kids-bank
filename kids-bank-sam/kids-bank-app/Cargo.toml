@@ -8,8 +8,10 @@ edition = "2021"
 [dependencies]
 
 lambda_runtime = "0.13.0"
-aws-sdk-config = "1.47.0"
-aws-sdk-dynamodb = "1.49.0"
+lambda_http = "0.13.0"
+aws-sdk-config = "1.48.0"
+aws-config = { version = "1.5.8", features = ["behavior-version-latest"] }
+aws-sdk-dynamodb = "1.50.0"
 serde = "1.0.210"
 tokio = { version = "1", features = ["macros"] }
 tracing = { version = "0.1", features = ["log"] }
