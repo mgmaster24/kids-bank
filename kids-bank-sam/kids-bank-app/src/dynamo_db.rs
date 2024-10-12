@@ -15,7 +15,7 @@ impl DynamoClient {
         Ok(DynamoClient { table_name, client })
     }
 
-    async pub fn get_item(&self) -> Result<Response<Body>, Error> {
+    pub async fn get_item(&self) -> Result<Response<Body>, Error> {
         Err()
     }
 
