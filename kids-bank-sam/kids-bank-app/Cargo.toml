@@ -7,8 +7,8 @@ edition = "2021"
 
 [dependencies]
 async-trait = "0.1.83"
-lambda_runtime = "0.13.0"
-lambda_http = "0.13.0"
+lambda_runtime = { version = "0.13.0", optional = true }
+lambda_http = { version= "0.13.0", optional = true }
 aws-sdk-config = "1.48.0"
 aws-config = { version = "1.5.8", features = ["behavior-version-latest"] }
 aws-sdk-dynamodb = "1.50.0"
@@ -25,29 +25,29 @@ lambda = ["lambda_runtime", "lambda_http"]
 [[bin]]
 name = "create-acct"
 path = "src/handlers/create_acct.rs"
-test = "false"
+test = false
 required-features = ["lambda"]
 
 [[bin]]
 name = "get-accounts"
 path = "src/handlers/get_accounts.rs"
-test = "false"
+test = false
 required-features = ["lambda"]
 
 [[bin]]
 name = "get-account"
 path = "src/handlers/get_account.rs"
-test = "false"
+test = false
 required-features = ["lambda"]
 
 [[bin]]
 name = "deposit"
 path = "src/handlers/deposit.rs"
-test = "false"
+test = false
 required-features = ["lambda"]
 
 [[bin]]
 name = "withdraw"
-path = "src/handlers/wihdraw.rs"
-test = "false"
+path = "src/handlers/withdraw.rs"
+test = false
 required-features = ["lambda"]

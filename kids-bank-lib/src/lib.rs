@@ -6,8 +6,16 @@ use async_trait::async_trait;
 pub use acct_management::{Account, AccountError};
 
 pub fn create_user_account(name: &str, email: &str) -> Result<Account, String> {
-    let user = users::User::new(name.to_string(), email.to_string());
+    let user = users::User::new(name, email);
     Ok(acct_management::Account::new(user))
+}
+
+pub fn create_account(id: u64, name: &str, email: &str, balance: f64) -> Account {
+    Account {
+        id,
+        user: users::User::new(name, email),
+        balance,
+    }
 }
 
 #[async_trait]

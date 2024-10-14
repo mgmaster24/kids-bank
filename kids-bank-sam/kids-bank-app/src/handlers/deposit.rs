@@ -6,9 +6,9 @@ use lambda_runtime::{run, service_fn, Error, LambdaEvent};
 /// There are some code example in the following URLs:
 /// - https://github.com/awslabs/aws-lambda-rust-runtime/tree/main/examples
 /// - https://github.com/aws-samples/serverless-rust-demo/
-async fn get_accounts(event: LambdaEvent<AccountRequest>) -> Result<AccountResponse, Error> {
+async fn deposit(event: LambdaEvent<AccountRequest>) -> Result<AccountResponse, Error> {
     // Prepare the response
-    let resp = AccountResponse::success("got accounts!");
+    let resp = AccountResponse::success("Deposit success");
 
     // Return `Response` (it will be serialized to JSON automatically by the runtime)
     Ok(resp)
@@ -24,5 +24,5 @@ async fn main() -> Result<(), Error> {
         .without_time()
         .init();
 
-    run(service_fn(get_accounts)).await
+    run(service_fn(deposit)).await
 }

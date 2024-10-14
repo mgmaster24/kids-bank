@@ -1,8 +1,10 @@
 use core::f64;
+use serde::{Deserialize, Serialize};
 use std::sync::atomic::AtomicU64;
 
 use crate::users::User;
 
+#[derive(Serialize, Deserialize)]
 pub struct Account {
     pub id: u64,
     pub user: User,
@@ -11,7 +13,8 @@ pub struct Account {
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum AccountError {
-    CreationError,
+    CreationError(String),
+    RetrievalError(String),
     Overdraft,
     NegativeAmount,
     DepositError,
@@ -63,18 +66,18 @@ mod tests {
 
     #[test]
     fn test_acct_creation() {
-        let user = User::new("Test User".to_string(), "TestEmail@test.com".to_string());
+        let user = User::new("Test User", "TestEmail@test.com");
         let acct = Account::new(user);
         assert_eq!(acct.balance, 0.0);
 
-        let user2 = User::new("Test User2".to_string(), "TestEmail2@test.com".to_string());
+        let user2 = User::new("Test User2", "TestEmail2@test.com");
         let acct2 = Account::new(user2);
         assert_ne!(acct.id, acct2.id);
     }
 
     #[test]
     fn test_acct_deposit_ok() {
-        let user = User::new("Test User".to_string(), "TestEmail@test.com".to_string());
+        let user = User::new("Test User", "TestEmail@test.com");
         let mut acct = Account::new(user);
         let res = acct.deposit(42.0);
         assert!(res.is_ok());
@@ -84,7 +87,7 @@ mod tests {
 
     #[test]
     fn test_acct_deposit_error() {
-        let user = User::new("Test User".to_string(), "TestEmail@test.com".to_string());
+        let user = User::new("Test User", "TestEmail@test.com");
         let mut acct = Account::new(user);
         let res = acct.deposit(-42.0);
         assert!(res.is_err());
@@ -93,7 +96,7 @@ mod tests {
 
     #[test]
     fn test_acct_withdraw_ok() {
-        let user = User::new("Test User".to_string(), "TestEmail@test.com".to_string());
+        let user = User::new("Test User", "TestEmail@test.com");
         let mut acct = Account::new(user);
         let dres = acct.deposit(42.0);
         let wres = acct.withdraw(24.0);
@@ -105,7 +108,7 @@ mod tests {
 
     #[test]
     fn test_acct_overdraft_error() {
-        let user = User::new("Test User".to_string(), "TestEmail@test.com".to_string());
+        let user = User::new("Test User", "TestEmail@test.com");
         let mut acct = Account::new(user);
         let dres = acct.deposit(42.0);
         let wres = acct.withdraw(43.0);
@@ -116,7 +119,7 @@ mod tests {
 
     #[test]
     fn test_acct_negative_withdraw_error() {
-        let user = User::new("Test User".to_string(), "TestEmail@test.com".to_string());
+        let user = User::new("Test User", "TestEmail@test.com");
         let mut acct = Account::new(user);
         let dres = acct.deposit(42.0);
         let wres = acct.withdraw(-43.0);
