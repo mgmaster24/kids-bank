@@ -4,13 +4,14 @@ use std::sync::atomic::AtomicU64;
 use crate::users::User;
 
 pub struct Account {
-    id: u64,
-    user: User,
-    balance: f64,
+    pub id: u64,
+    pub user: User,
+    pub balance: f64,
 }
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum AccountError {
+    CreationError,
     Overdraft,
     NegativeAmount,
     DepositError,

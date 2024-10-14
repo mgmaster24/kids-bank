@@ -1,4 +1,4 @@
-mod dynamo_db;
+use kids_bank_app::dynamo_db;
 
 use lambda_runtime::{run, service_fn, Error, LambdaEvent};
 

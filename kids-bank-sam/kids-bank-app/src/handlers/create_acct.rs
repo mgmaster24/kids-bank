@@ -1,5 +1,3 @@
-mod dynamo_db;
-
 use lambda_runtime::{run, service_fn, Error, LambdaEvent};
 
 use serde::{Deserialize, Serialize};
