@@ -1,5 +1,8 @@
 use kids_bank_sam::{AccountRequest, AccountResponse};
+use kids_bank_sam::dynamo_db;
 use lambda_runtime::{run, service_fn, Error, LambdaEvent};
+
+
 
 /// This is the main body for the function.
 /// Write your code inside it.
@@ -8,6 +11,7 @@ use lambda_runtime::{run, service_fn, Error, LambdaEvent};
 /// - https://github.com/aws-samples/serverless-rust-demo/
 async fn create_acct(event: LambdaEvent<AccountRequest>) -> Result<AccountResponse, Error> {
     // Prepare the response
+    let dc = DynamoClient::new()
     let resp = AccountResponse::success("Created Account!");
 
     // Return `Response` (it will be serialized to JSON automatically by the runtime)
