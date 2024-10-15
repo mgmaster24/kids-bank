@@ -1,6 +1,6 @@
-use core::f64;
+use core::{f64, fmt};
 use serde::{Deserialize, Serialize};
-use std::sync::atomic::AtomicU64;
+use std::{fmt::Write, sync::atomic::AtomicU64};
 
 use crate::users::User;
 
@@ -20,6 +20,35 @@ pub enum AccountError {
     DepositError,
     AccountExists,
     DoesNotExist,
+}
+
+impl fmt::Display for AccountError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            AccountError::CreationError(s) => {
+                let err_msg = "Failed to create account! Reason: ".to_owned() + s;
+                f.write_str(&err_msg)
+            }
+            AccountError::RetrievalError(s) => {
+                let err_msg = "Failed to get account! Reason: ".to_owned() + s;
+                f.write_str(&err_msg)
+            }
+            AccountError::Overdraft => {
+                write!(f, "Cannot withdraw funds! Account would be overdrafted.")
+            }
+            AccountError::NegativeAmount => {
+                write!(f, "Cannot not apply a negative amount to the balance.")
+            }
+            AccountError::DepositError => {
+                write!(f, "An error occurred during the depositing of funds")
+            }
+            AccountError::AccountExists => write!(
+                f,
+                "Failed to create account! Account already exists for provided email"
+            ),
+            AccountError::DoesNotExist => write!(f, "Account does NOT exist!"),
+        }
+    }
 }
 
 impl Account {

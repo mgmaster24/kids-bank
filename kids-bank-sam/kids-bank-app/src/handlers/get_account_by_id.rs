@@ -1,26 +1,21 @@
-use kids_bank_lib::AccountHandler;
-use kids_bank_sam::dynamo_db::DynamoClient;
-use lambda_http::{run, service_fn, Body, Error, Request, RequestExt, Response};
-use std::env;
+use kids_bank_sam::{AccountRequest, AccountResponse};
+use lambda_http::{run, service_fn, Body, Error, Request, Response};
 
 /// This is the main body for the function.
 /// Write your code inside it.
-/// There are some code example in the  following URLs:
+/// There are some code example in the following URLs:
 /// - https://github.com/awslabs/aws-lambda-rust-runtime/tree/main/examples
-/// - https://github.com/aws-samples/serve:rless-rust-demo/
-async fn create_acct(request: Request) -> Result<Response<Body>, Error> {
+/// - https://github.com/aws-samples/serverless-rust-demo/
+async fn get_acct(request: Request) -> Result<Response<Body>, Error> {
     // Prepare the response
     let config = aws_config::load_from_env().await;
     let table_name = env::var("TABLE_NAME").expect("TABLE_NAME must be set");
-    if let Ok(dc) = DynamoClient::new(&config, &table_name) {
+    if let Ok(dc) = dynamo_db::DynamoClient::new(&config, &table_name) {
         let query_parameters = request.query_string_parameters();
         let email = query_parameters
-            .first("email")
-            .expect("email query parameter should exist");
-        let name = query_parameters
-            .first("name")
-            .expect("name query parameter should exist");
-        let acct_res = dc.create_account(name, email).await;
+            .first("id")
+            .expect("expect id parameter to exist");
+        let acct_res = dc.get_account_by_id(id).await;
         match acct_res {
             Ok(a) => {
                 return Ok(Response::builder()
@@ -28,12 +23,11 @@ async fn create_acct(request: Request) -> Result<Response<Body>, Error> {
                     .body(serde_json::to_string(&a)?.into())?)
             }
             Err(e) => {
-                let err_str = format!("Failed to create account {e:#}");
+                let err_str = format!("Failed to get account {e:#}");
                 return Ok(Response::builder().status(500).body(err_str.into())?);
             }
-        };
+        }
     }
-
     Ok(Response::builder()
         .status(500)
         .body("Failed to created the dynamodb client".into())?)
@@ -49,5 +43,5 @@ async fn main() -> Result<(), Error> {
         .without_time()
         .init();
 
-    run(service_fn(|request: Request| create_acct(request))).await
+    run(service_fn(|request: Request| get_acct(request))).await
 }

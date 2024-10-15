@@ -34,6 +34,7 @@ mod tests {
 
     #[test]
     fn it_works() {
-        create_user_account("some user", "someuser@email.com");
+        let res = create_user_account("some user", "someuser@email.com");
+        assert!(res.is_ok());
     }
 }

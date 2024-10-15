@@ -19,6 +19,14 @@ impl DynamoClient {
         })
     }
 
+    pub async fn create_new_account(
+        &self,
+        email: &str,
+        name: &str,
+    ) -> Result<Account, AccountError> {
+        self.create_account(email, name).await
+    }
+
     fn table_name(&self) -> String {
         self.table_name.to_string()
     }
@@ -38,13 +46,11 @@ impl DynamoClient {
         {
             Ok(res) => {
                 let attr_map = res.item().expect("expected HashMap of AttributeValues");
-                return Ok(self.get_account_from_attributes(attr_map));
+                Ok(self.get_account_from_attributes(attr_map))
             }
-            Err(_) => {
-                return Err(AccountError::RetrievalError(format!(
-                    "Failed to retrieve item for {attr}"
-                )))
-            }
+            Err(_) => Err(AccountError::RetrievalError(format!(
+                "Failed to retrieve item for {attr}"
+            ))),
         }
     }
 
@@ -100,17 +106,15 @@ impl DynamoClient {
 impl AccountHandler for DynamoClient {
     async fn create_account(&self, name: &str, email: &str) -> Result<Account, AccountError> {
         // get account by provided email
-        let acct_res = self.get_account_by_email(email).await;
-        match acct_res {
-            Ok(_) => return Err(AccountError::AccountExists),
-            Err(_) => (),
+        if (self.get_account_by_email(email).await).is_ok() {
+            return Err(AccountError::AccountExists);
         }
 
         if let Ok(account) = create_user_account(name, email) {
             match &self
                 .client
                 .put_item()
-                .table_name(&self.table_name())
+                .table_name(self.table_name())
                 .item("id", AttributeValue::S(account.id.to_string()))
                 .item("email", AttributeValue::S(account.user.email().to_string()))
                 .item("name", AttributeValue::S(account.user.name().to_string()))
@@ -139,7 +143,12 @@ impl AccountHandler for DynamoClient {
             Ok(res) => {
                 // get vector of accounts
                 let mut accounts: Vec<Account> = Vec::new();
-                if let Some(items) = res.items {}
+                if let Some(items) = &res.items {
+                    for i in items {
+                        let account = self.get_account_from_attributes(i);
+                        accounts.push(account);
+                    }
+                }
                 return Ok(accounts);
             }
             Err(e) => return Err(AccountError::RetrievalError(format!("{e:#}"))),
@@ -160,7 +169,7 @@ impl AccountHandler for DynamoClient {
             let dep_res = acct.deposit(amount);
             match dep_res {
                 Ok(balance) => {
-                    self.update_item(account_id, balance);
+                    self.update_item(account_id, balance).await;
                     return Ok(balance);
                 }
                 Err(e) => return Err(e),
@@ -175,7 +184,7 @@ impl AccountHandler for DynamoClient {
             let wd_res = acct.withdraw(amount);
             match wd_res {
                 Ok(balance) => {
-                    self.update_item(account_id, balance);
+                    self.update_item(account_id, balance).await;
                     return Ok(balance);
                 }
                 Err(e) => return Err(e),

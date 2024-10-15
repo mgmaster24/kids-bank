@@ -1,17 +1,40 @@
-use kids_bank_sam::{AccountRequest, AccountResponse};
-use lambda_runtime::{run, service_fn, Error, LambdaEvent};
+use kids_bank_lib::AccountHandler;
+use kids_bank_sam::dynamo_db::DynamoClient;
+use lambda_http::{run, service_fn, Body, Error, Request, RequestExt, Response};
+use std::env;
 
 /// This is the main body for the function.
 /// Write your code inside it.
-/// There are some code example in the following URLs:
+/// There are some code example in the  following URLs:
 /// - https://github.com/awslabs/aws-lambda-rust-runtime/tree/main/examples
-/// - https://github.com/aws-samples/serverless-rust-demo/
-async fn deposit(event: LambdaEvent<AccountRequest>) -> Result<AccountResponse, Error> {
+/// - https://github.com/aws-samples/serve:rless-rust-demo/
+async fn deposit(request: Request) -> Result<Response<Body>, Error> {
     // Prepare the response
-    let resp = AccountResponse::success("Deposit success");
+    let config = aws_config::load_from_env().await;
+    let table_name = env::var("TABLE_NAME").expect("TABLE_NAME must be set");
+    if let Ok(dc) = DynamoClient::new(&config, &table_name) {
+        let query_parameters = request.query_string_parameters();
+        let id = query_parameters
+            .first("id")
+            .expect("id query parameter should exist");
+        let amount = query_parameters
+            .first("amount")
+            .expect("amount query parameter should exist");
+        let id = id.parse::<u64>().expect("id should be a u64");
+        let amount = amount.parse::<f64>().expect("amount should be f64");
+        let acct_res = dc.deposit(id, amount).await;
+        match acct_res {
+            Ok(a) => return Ok(Response::builder().status(200).body(a.to_string().into())?),
+            Err(e) => {
+                let err_str = format!("Failed to create account {e:#}");
+                return Ok(Response::builder().status(500).body(err_str.into())?);
+            }
+        };
+    }
 
-    // Return `Response` (it will be serialized to JSON automatically by the runtime)
-    Ok(resp)
+    Ok(Response::builder()
+        .status(500)
+        .body("Failed to created the dynamodb client".into())?)
 }
 
 #[tokio::main]
@@ -24,5 +47,5 @@ async fn main() -> Result<(), Error> {
         .without_time()
         .init();
 
-    run(service_fn(deposit)).await
+    run(service_fn(|request: Request| deposit(request))).await
 }
