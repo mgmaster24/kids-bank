@@ -1,5 +1,5 @@
 use kids_bank_lib::AccountHandler;
-use kids_bank_sam::dynamo_db::DynamoClient;
+use kids_bank_sam::DynamoClient;
 use lambda_http::{run, service_fn, Body, Error, Request, RequestExt, Response};
 use std::env;
 
@@ -15,27 +15,39 @@ async fn get_acct(request: Request) -> Result<Response<Body>, Error> {
     if let Ok(dc) = DynamoClient::new(&config, &table_name) {
         let query_parameters = request.query_string_parameters();
         let id = query_parameters.first("id");
-        let id = match id {
-            Some(i) => i,
-            None => {
-                return Ok(Response::builder()
-                    .status(400)
-                    .body("expected id parameter".into())?)
-            }
-        };
+        if let Some(i) = id {
+            let acct_res = dc.get_account_by_id(i).await;
+            match acct_res {
+                Ok(a) => {
+                    return Ok(Response::builder()
+                        .status(200)
+                        .body(serde_json::to_string(&a)?.into())?)
+                }
+                Err(e) => {
+                    let err_str = format!("Failed to get account {e:#}");
+                    return Ok(Response::builder().status(500).body(err_str.into())?);
+                }
+            };
+        }
 
-        let acct_res = dc.get_account_by_id(id).await;
-        match acct_res {
-            Ok(a) => {
-                return Ok(Response::builder()
-                    .status(200)
-                    .body(serde_json::to_string(&a)?.into())?)
-            }
-            Err(e) => {
-                let err_str = format!("Failed to get account {e:#}");
-                return Ok(Response::builder().status(500).body(err_str.into())?);
+        if let Some(email) = query_parameters.first("email") {
+            let acct_res = dc.get_account_by_email(email).await;
+            match acct_res {
+                Ok(a) => {
+                    return Ok(Response::builder()
+                        .status(200)
+                        .body(serde_json::to_string(&a)?.into())?)
+                }
+                Err(e) => {
+                    let err_str = format!("Failed to get account {e:#}");
+                    return Ok(Response::builder().status(500).body(err_str.into())?);
+                }
             }
         }
+
+        return Ok(Response::builder()
+            .status(400)
+            .body("no id or email query parameter were provided".into())?);
     }
     Ok(Response::builder()
         .status(500)

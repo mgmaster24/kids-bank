@@ -1,5 +1,5 @@
 use kids_bank_lib::AccountHandler;
-use kids_bank_sam::dynamo_db::DynamoClient;
+use kids_bank_sam::DynamoClient;
 use lambda_http::{run, service_fn, Body, Error, Request, RequestExt, Response};
 use std::env;
 
@@ -20,7 +20,6 @@ async fn withdraw(request: Request) -> Result<Response<Body>, Error> {
         let amount = query_parameters
             .first("amount")
             .expect("amount query parameter should exist");
-        let id = id.parse::<u64>().expect("id should be a u64");
         let amount = amount.parse::<f64>().expect("amount should be f64");
         let acct_res = dc.withdraw(id, amount).await;
         match acct_res {

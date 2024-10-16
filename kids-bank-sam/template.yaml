@@ -65,6 +65,8 @@ Resources:
       Policies:
         - DynamoDBWritePolicy: # More info about SAM policy templates: https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-policy-templates.html
             TableName: !Ref AccountsTable
+        - DynamoDBReadPolicy:
+            TableName: !Ref AccountsTable
 
   GetAccountsFunction:
     Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
@@ -88,7 +90,7 @@ Resources:
         Variables:
           TABLE_NAME: !Ref AccountsTable
       Policies:
-        - DynamoDBWritePolicy: # More info about SAM policy templates: https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-policy-templates.html
+        - DynamoDBReadPolicy: # More info about SAM policy templates: https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-policy-templates.html
             TableName: !Ref AccountsTable
 
   GetAccountFunction:
@@ -113,7 +115,7 @@ Resources:
         Variables:
           TABLE_NAME: !Ref AccountsTable
       Policies:
-        - DynamoDBWritePolicy: # More info about SAM policy templates: https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-policy-templates.html
+        - DynamoDBReadPolicy: # More info about SAM policy templates: https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-policy-templates.html
             TableName: !Ref AccountsTable
 
   DepositFunction:
@@ -121,7 +123,7 @@ Resources:
     Metadata:
       BuildMethod: rust-cargolambda
       BuildProperties:
-        Binary: depost
+        Binary: deposit
     Properties:
       CodeUri: ./kids-bank-app
       Handler: bootstrap.is.the.handler
@@ -132,13 +134,15 @@ Resources:
         Deposit:
           Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
           Properties:
-            Path: /deposit
+            Path: /deposit/{id}
             Method: post
       Environment:
         Variables:
           TABLE_NAME: !Ref AccountsTable
       Policies:
         - DynamoDBWritePolicy: # More info about SAM policy templates: https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-policy-templates.html
+            TableName: !Ref AccountsTable
+        - DynamoDBReadPolicy:
             TableName: !Ref AccountsTable
 
   WithdrawFunction:
@@ -157,13 +161,15 @@ Resources:
         Withdraw:
           Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
           Properties:
-            Path: /withdraw
+            Path: /withdraw/{id}
             Method: get
       Environment:
         Variables:
           TABLE_NAME: !Ref AccountsTable
       Policies:
         - DynamoDBWritePolicy: # More info about SAM policy templates: https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-policy-templates.html
+            TableName: !Ref AccountsTable
+        - DynamoDBReadPolicy:
             TableName: !Ref AccountsTable
 
 Outputs:

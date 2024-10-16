@@ -10,9 +10,9 @@ pub fn create_user_account(name: &str, email: &str) -> Result<Account, String> {
     Ok(acct_management::Account::new(user))
 }
 
-pub fn create_account(id: u64, name: &str, email: &str, balance: f64) -> Account {
+pub fn create_account(id: &str, name: &str, email: &str, balance: f64) -> Account {
     Account {
-        id,
+        id: id.to_string(),
         user: users::User::new(name, email),
         balance,
     }
@@ -22,10 +22,10 @@ pub fn create_account(id: u64, name: &str, email: &str, balance: f64) -> Account
 pub trait AccountHandler {
     async fn create_account(&self, name: &str, email: &str) -> Result<Account, AccountError>;
     async fn get_accounts(&self) -> Result<Vec<Account>, AccountError>;
-    async fn get_account_by_id(&self, id: u64) -> Result<Account, AccountError>;
+    async fn get_account_by_id(&self, id: &str) -> Result<Account, AccountError>;
     async fn get_account_by_email(&self, email: &str) -> Result<Account, AccountError>;
-    async fn withdraw(&self, account_id: u64, amount: f64) -> Result<f64, AccountError>;
-    async fn deposit(&self, account_id: u64, amount: f64) -> Result<f64, AccountError>;
+    async fn withdraw(&self, account_id: &str, amount: f64) -> Result<f64, AccountError>;
+    async fn deposit(&self, account_id: &str, amount: f64) -> Result<f64, AccountError>;
 }
 
 #[cfg(test)]

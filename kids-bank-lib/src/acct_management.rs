@@ -1,12 +1,12 @@
 use core::f64;
 use serde::{Deserialize, Serialize};
-use std::{fmt, sync::atomic::AtomicU64};
+use std::fmt;
 
 use crate::users::User;
 
 #[derive(Serialize, Deserialize)]
 pub struct Account {
-    pub id: u64,
+    pub id: String,
     pub user: User,
     pub balance: f64,
 }
@@ -54,7 +54,7 @@ impl fmt::Display for AccountError {
 impl Account {
     pub fn new(user: User) -> Self {
         Account {
-            id: Self::get_id(),
+            id: user.name().to_owned() + "_" + user.email().as_str(),
             user,
             balance: 0.0,
         }
@@ -81,11 +81,6 @@ impl Account {
 
         self.balance += amount;
         Ok(self.balance)
-    }
-
-    fn get_id() -> u64 {
-        static COUNTER: AtomicU64 = AtomicU64::new(1);
-        COUNTER.fetch_add(1, std::sync::atomic::Ordering::Relaxed)
     }
 }
 

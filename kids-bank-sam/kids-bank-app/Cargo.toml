@@ -25,31 +25,31 @@ lambda = ["lambda_runtime", "lambda_http"]
 
 [[bin]]
 name = "create-acct"
-path = "src/handlers/create_acct.rs"
+path = "src/bin/create_acct.rs"
 test = false
 required-features = ["lambda"]
 
 [[bin]]
 name = "get-accounts"
-path = "src/handlers/get_accounts.rs"
+path = "src/bin/get_accounts.rs"
 test = false
 required-features = ["lambda"]
 
 [[bin]]
 name = "get-account"
-path = "src/handlers/get_account.rs"
+path = "src/bin/get_account.rs"
 test = false
 required-features = ["lambda"]
 
 [[bin]]
 name = "deposit"
-path = "src/handlers/deposit.rs"
+path = "src/bin/deposit.rs"
 test = false
 required-features = ["lambda"]
 
 [[bin]]
 name = "withdraw"
-path = "src/handlers/withdraw.rs"
+path = "src/bin/withdraw.rs"
 test = false
 required-features = ["lambda"]
 
