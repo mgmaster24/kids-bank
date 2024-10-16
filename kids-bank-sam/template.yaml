@@ -11,35 +11,187 @@ Globals:
     Timeout: 3
     MemorySize: 128
 
-
 Resources:
-  CreateAccount:
+  AccountsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: "Accounts"
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+        - AttributeName: email
+          AttributeType: S
+        - AttributeName: name
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+        - AttributeName: email
+          KeyType: RANGE
+      BillingMode: PAY_PER_REQUEST
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      GlobalSecondaryIndexes:
+        - IndexName: email-index
+          KeySchema:
+            - AttributeName: email
+              KeyType: HASH
+            - AttributeName: id
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+  
+  CreateAccountFunction:
     Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
     Metadata:
-      BuildMethod: rust-cargolambda # More info about Cargo Lambda: https://github.com/cargo-lambda/cargo-lambda
+      BuildMethod: rust-cargolambda
+      BuildProperties:
+        Binary: create-acct
     Properties:
-      CodeUri: ./kids-bank-app   # Points to dir of Cargo.toml
-      Handler: bootstrap    # Do not change, as this is the default executable name produced by Cargo Lambda
+      CodeUri: ./kids-bank-app
+      Handler: bootstrap.is.the.handler
       Runtime: provided.al2
       Architectures:
         - x86_64
       Events:
-        CreateAccount:
+        Create:
           Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
           Properties:
             Path: /create
             Method: put
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref AccountsTable
+      Policies:
+        - DynamoDBWritePolicy: # More info about SAM policy templates: https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-policy-templates.html
+            TableName: !Ref AccountsTable
+
+  GetAccountsFunction:
+    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+    Metadata:
+      BuildMethod: rust-cargolambda
+      BuildProperties:
+        Binary: get-accounts
+    Properties:
+      CodeUri: ./kids-bank-app
+      Handler: bootstrap.is.the.handler
+      Runtime: provided.al2
+      Architectures:
+        - x86_64
+      Events:
+        GetAccounts:
+          Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
+          Properties:
+            Path: /accounts
+            Method: get
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref AccountsTable
+      Policies:
+        - DynamoDBWritePolicy: # More info about SAM policy templates: https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-policy-templates.html
+            TableName: !Ref AccountsTable
+
+  GetAccountFunction:
+    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+    Metadata:
+      BuildMethod: rust-cargolambda
+      BuildProperties:
+        Binary: get-account
+    Properties:
+      CodeUri: ./kids-bank-app
+      Handler: bootstrap.is.the.handler
+      Runtime: provided.al2
+      Architectures:
+        - x86_64
+      Events:
+        GetAccount:
+          Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
+          Properties:
+            Path: /account
+            Method: get
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref AccountsTable
+      Policies:
+        - DynamoDBWritePolicy: # More info about SAM policy templates: https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-policy-templates.html
+            TableName: !Ref AccountsTable
+
+  DepositFunction:
+    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+    Metadata:
+      BuildMethod: rust-cargolambda
+      BuildProperties:
+        Binary: depost
+    Properties:
+      CodeUri: ./kids-bank-app
+      Handler: bootstrap.is.the.handler
+      Runtime: provided.al2
+      Architectures:
+        - x86_64
+      Events:
+        Deposit:
+          Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
+          Properties:
+            Path: /deposit
+            Method: post
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref AccountsTable
+      Policies:
+        - DynamoDBWritePolicy: # More info about SAM policy templates: https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-policy-templates.html
+            TableName: !Ref AccountsTable
+
+  WithdrawFunction:
+    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+    Metadata:
+      BuildMethod: rust-cargolambda
+      BuildProperties:
+        Binary: withdraw
+    Properties:
+      CodeUri: ./kids-bank-app
+      Handler: bootstrap.is.the.handler
+      Runtime: provided.al2
+      Architectures:
+        - x86_64
+      Events:
+        Withdraw:
+          Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
+          Properties:
+            Path: /withdraw
+            Method: get
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref AccountsTable
+      Policies:
+        - DynamoDBWritePolicy: # More info about SAM policy templates: https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-policy-templates.html
+            TableName: !Ref AccountsTable
 
 Outputs:
   # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function
   # Find out more about other implicit resources you can reference within SAM
   # https://github.com/awslabs/serverless-application-model/blob/master/docs/internals/generated_resources.rst#api
-  HelloWorldApi:
-    Description: "API Gateway endpoint URL for Prod stage for Hello World function"
-    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/hello/"
-  HelloWorldFunction:
-    Description: "Hello World Lambda Function ARN"
-    Value: !GetAtt HelloWorldFunction.Arn
+  KidsBankAPIGatewayi:
+    Description: "Base API Gateway endpoint URL for kids bank functions"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/"
+  CreateAccountFunction:
+    Description: "Create Account Lambda Function ARN"
+    Value: !GetAtt CreateAccountFunction.Arn 
+  GetAccountsFunction:
+    Description: "Get Accounts Lambda Function ARN"
+    Value: !GetAtt GetAccountsFunction.Arn
+  GetAccountFunction:
+    Description: "Get Account Lambda Function ARN"
+    Value: !GetAtt GetAccountFunction.Arn
+  DepositFunction:
+    Description: "Deposit Lambda Function ARN"
+    Value: !GetAtt DepositFunction.Arn
+  WithdrawFunction:
+    Description: "Withdraw Lambda Function ARN"
+    Value: !GetAtt WithdrawFunction.Arn
+  AccountsTable:
+    Description: "DynamoDB table name"
+    Value: !GetAtt AccounsTable.Arn
+  
   HelloWorldFunctionIamRole:
     Description: "Implicit IAM Role created for Hello World function"
     Value: !GetAtt HelloWorldFunctionRole.Arn

@@ -13,9 +13,15 @@ async fn get_acct(request: Request) -> Result<Response<Body>, Error> {
     let table_name = env::var("TABLE_NAME").expect("TABLE_NAME must be set");
     if let Ok(dc) = DynamoClient::new(&config, &table_name) {
         let query_parameters = request.query_string_parameters();
-        let email = query_parameters
-            .first("email")
-            .expect("email query parameter should exist");
+        let email = query_parameters.first("email");
+        let email = match email {
+            Some(e) => e,
+            None => {
+                return Ok(Response::builder()
+                    .status(400)
+                    .body("expected email parameter to be present".into())?)
+            }
+        };
         let acct_res = dc.get_account_by_email(email).await;
         match acct_res {
             Ok(a) => {

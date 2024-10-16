@@ -1,5 +1,7 @@
-use kids_bank_sam::{AccountRequest, AccountResponse};
-use lambda_http::{run, service_fn, Body, Error, Request, Response};
+use kids_bank_lib::AccountHandler;
+use kids_bank_sam::dynamo_db::DynamoClient;
+use lambda_http::{run, service_fn, Body, Error, Request, RequestExt, Response};
+use std::env;
 
 /// This is the main body for the function.
 /// Write your code inside it.
@@ -10,11 +12,18 @@ async fn get_acct(request: Request) -> Result<Response<Body>, Error> {
     // Prepare the response
     let config = aws_config::load_from_env().await;
     let table_name = env::var("TABLE_NAME").expect("TABLE_NAME must be set");
-    if let Ok(dc) = dynamo_db::DynamoClient::new(&config, &table_name) {
+    if let Ok(dc) = DynamoClient::new(&config, &table_name) {
         let query_parameters = request.query_string_parameters();
-        let email = query_parameters
-            .first("id")
-            .expect("expect id parameter to exist");
+        let id = query_parameters.first("id");
+        let id = match id {
+            Some(i) => i,
+            None => {
+                return Ok(Response::builder()
+                    .status(400)
+                    .body("expected id parameter".into())?)
+            }
+        };
+
         let acct_res = dc.get_account_by_id(id).await;
         match acct_res {
             Ok(a) => {

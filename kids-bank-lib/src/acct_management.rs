@@ -1,6 +1,6 @@
-use core::{f64, fmt};
+use core::f64;
 use serde::{Deserialize, Serialize};
-use std::{fmt::Write, sync::atomic::AtomicU64};
+use std::{fmt, sync::atomic::AtomicU64};
 
 use crate::users::User;
 
