@@ -21,8 +21,6 @@ Resources:
           AttributeType: S
         - AttributeName: email
           AttributeType: S
-        - AttributeName: name
-          AttributeType: S
       KeySchema:
         - AttributeName: id
           KeyType: HASH
@@ -196,8 +194,5 @@ Outputs:
     Value: !GetAtt WithdrawFunction.Arn
   AccountsTable:
     Description: "DynamoDB table name"
-    Value: !GetAtt AccounsTable.Arn
+    Value: !GetAtt AccountsTable.Arn
   
-  HelloWorldFunctionIamRole:
-    Description: "Implicit IAM Role created for Hello World function"
-    Value: !GetAtt HelloWorldFunctionRole.Arn
