@@ -4,12 +4,13 @@ Description: >
   kids-bank-sam
 
   The serverless application for Kids Bank.  Will provide a CRUD application for kids account handling
-
-# More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
 Globals:
   Function:
     Timeout: 3
-    MemorySize: 256
+    Handler: bootstrap
+    Runtime: provided.al2
+    Architectures:
+      - x86_64
 
 Resources:
   AccountsTable:
@@ -18,14 +19,10 @@ Resources:
       TableName: "Accounts"
       AttributeDefinitions:
         - AttributeName: id
-          AttributeType: S
-        - AttributeName: email
-          AttributeType: S
+          AttributeType: S 
       KeySchema:
         - AttributeName: id
           KeyType: HASH
-        - AttributeName: email
-          KeyType: RANGE
       BillingMode: PAY_PER_REQUEST
       PointInTimeRecoverySpecification:
         PointInTimeRecoveryEnabled: true
@@ -34,8 +31,6 @@ Resources:
           KeySchema:
             - AttributeName: email
               KeyType: HASH
-            - AttributeName: id
-              KeyType: RANGE
           Projection:
             ProjectionType: ALL
   
@@ -46,11 +41,7 @@ Resources:
       BuildProperties:
         Binary: create-acct
     Properties:
-      CodeUri: ./kids-bank-app
-      Handler: bootstrap.is.the.handler
-      Runtime: provided.al2
-      Architectures:
-        - x86_64
+      CodeUri: kids-bank-app
       Events:
         Create:
           Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
@@ -73,11 +64,7 @@ Resources:
       BuildProperties:
         Binary: get-accounts
     Properties:
-      CodeUri: ./kids-bank-app
-      Handler: bootstrap.is.the.handler
-      Runtime: provided.al2
-      Architectures:
-        - x86_64
+      CodeUri: kids-bank-app/
       Events:
         GetAccounts:
           Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
@@ -98,11 +85,7 @@ Resources:
       BuildProperties:
         Binary: get-account
     Properties:
-      CodeUri: ./kids-bank-app
-      Handler: bootstrap.is.the.handler
-      Runtime: provided.al2
-      Architectures:
-        - x86_64
+      CodeUri: kids-bank-app/
       Events:
         GetAccount:
           Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
@@ -123,16 +106,12 @@ Resources:
       BuildProperties:
         Binary: deposit
     Properties:
-      CodeUri: ./kids-bank-app
-      Handler: bootstrap.is.the.handler
-      Runtime: provided.al2
-      Architectures:
-        - x86_64
+      CodeUri: kids-bank-app/
       Events:
         Deposit:
           Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
           Properties:
-            Path: /deposit/{id}
+            Path: /deposit
             Method: post
       Environment:
         Variables:
@@ -150,17 +129,13 @@ Resources:
       BuildProperties:
         Binary: withdraw
     Properties:
-      CodeUri: ./kids-bank-app
-      Handler: bootstrap.is.the.handler
-      Runtime: provided.al2
-      Architectures:
-        - x86_64
+      CodeUri: kids-bank-app/
       Events:
         Withdraw:
           Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
           Properties:
-            Path: /withdraw/{id}
-            Method: get
+            Path: /withdraw
+            Method: post
       Environment:
         Variables:
           TABLE_NAME: !Ref AccountsTable

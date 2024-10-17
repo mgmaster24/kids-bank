@@ -40,7 +40,7 @@ impl DynamoClient {
             .client
             .get_item()
             .table_name(self.table_name())
-            .key(attr, attr_val)
+            .key(attr, attr_val.clone())
             .send()
             .await
         {
@@ -48,9 +48,13 @@ impl DynamoClient {
                 let attr_map = res.item().expect("expected HashMap of AttributeValues");
                 Ok(self.get_account_from_attributes(attr_map))
             }
-            Err(_) => Err(AccountError::RetrievalError(format!(
-                "Failed to retrieve item for {attr}"
-            ))),
+            Err(e) => {
+                let table_name = self.table_name();
+                Err(AccountError::RetrievalError(format!(
+                    "Failed to retrieve item for {attr} from {table_name} for value {:?}. Reason: {:?}",
+                    attr_val.clone(), e
+                )))
+            }
         }
     }
 
@@ -154,7 +158,7 @@ impl AccountHandler for DynamoClient {
     }
 
     async fn get_account_by_id(&self, id: &str) -> Result<Account, AccountError> {
-        self.get_item("id", AttributeValue::N(id.to_string())).await
+        self.get_item("id", AttributeValue::S(id.to_string())).await
     }
 
     async fn get_account_by_email(&self, email: &str) -> Result<Account, AccountError> {
