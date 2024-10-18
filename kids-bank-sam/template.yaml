@@ -19,7 +19,9 @@ Resources:
       TableName: "Accounts"
       AttributeDefinitions:
         - AttributeName: id
-          AttributeType: S 
+          AttributeType: S
+        - AttributeName: email
+          AttributeType: S
       KeySchema:
         - AttributeName: id
           KeyType: HASH

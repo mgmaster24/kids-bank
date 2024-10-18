@@ -54,7 +54,7 @@ impl fmt::Display for AccountError {
 impl Account {
     pub fn new(user: User) -> Self {
         Account {
-            id: user.name().to_lowercase().trim().to_owned() + "_" + user.email().as_str(),
+            id: user.name().trim().to_lowercase().to_owned() + "_" + user.email().as_str(),
             user,
             balance: 0.0,
         }
