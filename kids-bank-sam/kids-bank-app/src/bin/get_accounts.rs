@@ -1,4 +1,4 @@
-use kids_bank_lib::AccountHandler;
+use kids_bank_lib::AsyncAccountHandler;
 use kids_bank_sam::DynamoClient;
 use lambda_http::{run, service_fn, Body, Error, Request, Response};
 use std::env;
@@ -12,7 +12,7 @@ async fn get_accts(_request: Request) -> Result<Response<Body>, Error> {
     let config = aws_config::load_from_env().await;
     let table_name = env::var("TABLE_NAME").expect("TABLE_NAME must be set");
     if let Ok(dc) = DynamoClient::new(&config, &table_name) {
-        let accts_res = dc.get_accounts().await;
+        let accts_res = dc.get_accounts_async().await;
         match accts_res {
             Ok(a) => {
                 return Ok(Response::builder()

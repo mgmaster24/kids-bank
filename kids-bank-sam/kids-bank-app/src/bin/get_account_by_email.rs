@@ -1,4 +1,4 @@
-use kids_bank_lib::AccountHandler;
+use kids_bank_lib::AsyncAccountHandler;
 use kids_bank_sam::DynamoClient;
 use lambda_http::{run, service_fn, Body, Error, Request, RequestExt, Response};
 use std::env;
@@ -22,7 +22,7 @@ async fn get_acct(request: Request) -> Result<Response<Body>, Error> {
                     .body("expected email parameter to be present".into())?)
             }
         };
-        let acct_res = dc.get_account_by_email(email).await;
+        let acct_res = dc.get_account_by_email_async(email).await;
         match acct_res {
             Ok(a) => {
                 return Ok(Response::builder()

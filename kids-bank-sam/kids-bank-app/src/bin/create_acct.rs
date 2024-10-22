@@ -1,4 +1,4 @@
-use kids_bank_lib::AccountHandler;
+use kids_bank_lib::AsyncAccountHandler;
 use kids_bank_sam::DynamoClient;
 use lambda_http::{run, service_fn, Body, Error, Request, RequestExt, Response};
 use std::env;
@@ -20,7 +20,7 @@ async fn create_acct(request: Request) -> Result<Response<Body>, Error> {
         let name = query_parameters
             .first("name")
             .expect("name query parameter should exist");
-        let acct_res = dc.create_account(name, email).await;
+        let acct_res = dc.create_account_async(name, email).await;
         match acct_res {
             Ok(a) => {
                 return Ok(Response::builder()

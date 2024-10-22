@@ -1,6 +1,8 @@
 use async_trait::async_trait;
 use aws_sdk_dynamodb::types::AttributeValue;
-use kids_bank_lib::{create_account, create_user_account, Account, AccountError, AccountHandler};
+use kids_bank_lib::{
+    create_account, create_user_account, Account, AccountError, AsyncAccountHandler,
+};
 use std::{collections::HashMap, f64};
 
 #[derive(Debug)]
@@ -24,7 +26,7 @@ impl DynamoClient {
         email: &str,
         name: &str,
     ) -> Result<Account, AccountError> {
-        self.create_account(email, name).await
+        self.create_account_async(email, name).await
     }
 
     fn table_name(&self) -> String {
@@ -105,10 +107,10 @@ impl DynamoClient {
 }
 
 #[async_trait]
-impl AccountHandler for DynamoClient {
-    async fn create_account(&self, name: &str, email: &str) -> Result<Account, AccountError> {
+impl AsyncAccountHandler for DynamoClient {
+    async fn create_account_async(&self, name: &str, email: &str) -> Result<Account, AccountError> {
         // get account by provided email
-        if (self.get_account_by_email(email).await).is_ok() {
+        if (self.get_account_by_email_async(email).await).is_ok() {
             return Err(AccountError::AccountExists);
         }
 
@@ -134,7 +136,7 @@ impl AccountHandler for DynamoClient {
         ))
     }
 
-    async fn get_accounts(&self) -> Result<Vec<Account>, AccountError> {
+    async fn get_accounts_async(&self) -> Result<Vec<Account>, AccountError> {
         match &self
             .client
             .scan()
@@ -157,17 +159,17 @@ impl AccountHandler for DynamoClient {
         }
     }
 
-    async fn get_account_by_id(&self, id: &str) -> Result<Account, AccountError> {
+    async fn get_account_by_id_async(&self, id: &str) -> Result<Account, AccountError> {
         self.get_item("id", AttributeValue::S(id.to_string())).await
     }
 
-    async fn get_account_by_email(&self, email: &str) -> Result<Account, AccountError> {
+    async fn get_account_by_email_async(&self, email: &str) -> Result<Account, AccountError> {
         self.get_item("email", AttributeValue::S(email.to_string()))
             .await
     }
 
-    async fn deposit(&self, account_id: &str, amount: f64) -> Result<f64, AccountError> {
-        if let Ok(mut acct) = self.get_account_by_id(account_id).await {
+    async fn deposit_async(&self, account_id: &str, amount: f64) -> Result<f64, AccountError> {
+        if let Ok(mut acct) = self.get_account_by_id_async(account_id).await {
             let dep_res = acct.deposit(amount);
             match dep_res {
                 Ok(balance) => {
@@ -184,8 +186,8 @@ impl AccountHandler for DynamoClient {
         Err(AccountError::DepositError)
     }
 
-    async fn withdraw(&self, account_id: &str, amount: f64) -> Result<f64, AccountError> {
-        if let Ok(mut acct) = self.get_account_by_id(account_id).await {
+    async fn withdraw_async(&self, account_id: &str, amount: f64) -> Result<f64, AccountError> {
+        if let Ok(mut acct) = self.get_account_by_id_async(account_id).await {
             let wd_res = acct.withdraw(amount);
             match wd_res {
                 Ok(balance) => {

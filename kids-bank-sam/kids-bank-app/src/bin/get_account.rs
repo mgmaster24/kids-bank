@@ -1,4 +1,4 @@
-use kids_bank_lib::AccountHandler;
+use kids_bank_lib::AsyncAccountHandler;
 use kids_bank_sam::DynamoClient;
 use lambda_http::{run, service_fn, Body, Error, Request, RequestExt, Response};
 use std::env;
@@ -16,7 +16,7 @@ async fn get_acct(request: Request) -> Result<Response<Body>, Error> {
         let query_parameters = request.query_string_parameters();
         let id = query_parameters.first("id");
         if let Some(i) = id {
-            let acct_res = dc.get_account_by_id(i).await;
+            let acct_res = dc.get_account_by_id_async(i).await;
             match acct_res {
                 Ok(a) => {
                     return Ok(Response::builder()
@@ -31,7 +31,7 @@ async fn get_acct(request: Request) -> Result<Response<Body>, Error> {
         }
 
         if let Some(email) = query_parameters.first("email") {
-            let acct_res = dc.get_account_by_email(email).await;
+            let acct_res = dc.get_account_by_email_async(email).await;
             match acct_res {
                 Ok(a) => {
                     return Ok(Response::builder()

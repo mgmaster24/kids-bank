@@ -19,13 +19,22 @@ pub fn create_account(id: &str, name: &str, email: &str, balance: f64) -> Accoun
 }
 
 #[async_trait]
+pub trait AsyncAccountHandler {
+    async fn create_account_async(&self, name: &str, email: &str) -> Result<Account, AccountError>;
+    async fn get_accounts_async(&self) -> Result<Vec<Account>, AccountError>;
+    async fn get_account_by_id_async(&self, id: &str) -> Result<Account, AccountError>;
+    async fn get_account_by_email_async(&self, email: &str) -> Result<Account, AccountError>;
+    async fn withdraw_async(&self, account_id: &str, amount: f64) -> Result<f64, AccountError>;
+    async fn deposit_async(&self, account_id: &str, amount: f64) -> Result<f64, AccountError>;
+}
+
 pub trait AccountHandler {
-    async fn create_account(&self, name: &str, email: &str) -> Result<Account, AccountError>;
-    async fn get_accounts(&self) -> Result<Vec<Account>, AccountError>;
-    async fn get_account_by_id(&self, id: &str) -> Result<Account, AccountError>;
-    async fn get_account_by_email(&self, email: &str) -> Result<Account, AccountError>;
-    async fn withdraw(&self, account_id: &str, amount: f64) -> Result<f64, AccountError>;
-    async fn deposit(&self, account_id: &str, amount: f64) -> Result<f64, AccountError>;
+    fn create_account(&self, name: &str, email: &str) -> Result<Account, AccountError>;
+    fn get_accounts(&self) -> Result<Vec<Account>, AccountError>;
+    fn get_account_by_id(&self, id: &str) -> Result<Account, AccountError>;
+    fn get_account_by_email(&self, email: &str) -> Result<Account, AccountError>;
+    fn withdraw(&self, account_id: &str, amount: f64) -> Result<f64, AccountError>;
+    fn deposit(&self, account_id: &str, amount: f64) -> Result<f64, AccountError>;
 }
 
 #[cfg(test)]
