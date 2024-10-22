@@ -5,3 +5,4 @@ edition = "2021"
 
 [dependencies]
 kid-bank-lib = { path = "../kids-bank-lib" }
+sqlite= "0.36.1"
