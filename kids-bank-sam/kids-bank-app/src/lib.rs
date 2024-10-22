@@ -63,7 +63,7 @@ impl DynamoClient {
             .client
             .update_item()
             .table_name(self.table_name())
-            .key("id", AttributeValue::N(id.to_string()))
+            .key("id", AttributeValue::S(id.to_string()))
             .update_expression("set balance = :balance")
             .expression_attribute_values(":balance", AttributeValue::N(balance.to_string()))
             .send()

@@ -53,8 +53,10 @@ impl fmt::Display for AccountError {
 
 impl Account {
     pub fn new(user: User) -> Self {
+        let words: Vec<_> = user.name().split_whitespace().collect();
+        let id = words.join("");
         Account {
-            id: user.name().trim().to_lowercase().to_owned() + "_" + user.email().as_str(),
+            id: id.to_owned() + "_" + user.email().as_str(),
             user,
             balance: 0.0,
         }
