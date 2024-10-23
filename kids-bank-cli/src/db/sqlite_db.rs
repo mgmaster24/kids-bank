@@ -1,4 +1,4 @@
-use kids_bank_lib::{create_account, Account, AccountHandler};
+use kids_bank_lib::{create_account, Account, AccountError, AccountHandler};
 use rusqlite;
 
 pub struct Client {
@@ -14,7 +14,7 @@ impl Client {
                         id INTERGER PRIMARY KEY,
                         name TEXT NOT NULL,
                         email TEXT NOT NULL,
-                        balance INTEGER
+                        balance REAL DEFAULT 0.0 NOT NULL
                     )",
                     (),
                 );
@@ -29,18 +29,29 @@ impl Client {
         }
     }
 
-    // pub fn get_all_accounts(&self) -> Result<Vec<Account>, AccountError> {
-    //     let mut stat = &self.connection.prepare("SELECT * FROM accounts")?;
-    //     let accounts_iter = stat.query_map((), |row| {
-    //         let
-    //         Ok(create_account(
-    //             row.get(0)?,
-    //             row.get(1)?,
-    //             row.get(2)?,
-    //             row.get(3)?,
-    //         ))
-    //     })?;
-    // }
+    pub fn get_all_accounts(&self) -> Result<Vec<Account>, AccountError> {
+        let stat_res = &self.connection.prepare("SELECT * FROM accounts");
+        match stat_res {
+            Ok(mut stat) => {
+                let accounts_iter = stat.query_map([], |row| {
+                    let id: i32 = row.get(0)?;
+                    let name: String = row.get(1)?;
+                    let email: String = row.get(2)?;
+                    let balance: f64 = row.get(3)?;
+
+                    return create_account(
+                        id.to_string().as_str(),
+                        name.as_str(),
+                        email.as_str(),
+                        balance,
+                    );
+                });
+
+                Ok(accounts_iter)
+            }
+            Err(e) => return Err(AccountError::RetrievalError(e.to_string())),
+        }
+    }
 }
 
 impl AccountHandler for Client {
@@ -49,7 +60,15 @@ impl AccountHandler for Client {
         name: &str,
         email: &str,
     ) -> Result<Account, kids_bank_lib::AccountError> {
-        Err(kids_bank_lib::AccountError::DoesNotExist)
+        let result = &self.connection.execute(
+            "INSERT INTO accounts (name, email) VALUES (?1, ?2)",
+            (name.to_string(), email.to_string()),
+        );
+
+        match result {
+            Ok(id) => {}
+            Err(e) => Err(kids_bank_lib::AccountError::CreationError(format!("{}", e))),
+        }
     }
 
     fn get_accounts(&self) -> Result<Vec<Account>, kids_bank_lib::AccountError> {
