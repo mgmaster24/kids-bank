@@ -29,7 +29,7 @@ pub trait AsyncAccountHandler {
 }
 
 pub trait AccountHandler {
-    fn create_account(&self, name: &str, email: &str) -> Result<Account, AccountError>;
+    fn create_account(&self, name: &str, email: &str) -> Result<bool, AccountError>;
     fn get_accounts(&self) -> Result<Vec<Account>, AccountError>;
     fn get_account_by_id(&self, id: &str) -> Result<Account, AccountError>;
     fn get_account_by_email(&self, email: &str) -> Result<Account, AccountError>;

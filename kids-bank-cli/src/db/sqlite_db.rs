@@ -77,11 +77,61 @@ impl AccountHandler for Client {
     }
 
     fn get_account_by_id(&self, id: &str) -> Result<Account, kids_bank_lib::AccountError> {
-        let stat_res = self.connection.prepare("SELECT id FROM accounts WHERE id =  ")
+        let stat_res = self
+            .connection
+            .prepare("SELECT * FROM accounts WHERE id = :id");
+        match stat_res {
+            Ok(mut stat) => {
+                let account = stat.query_row(&[(":id", id)], |row| {
+                    let id: i32 = row.get(0)?;
+                    let name: String = row.get(1)?;
+                    let email: String = row.get(2)?;
+                    let balance: f64 = row.get(3)?;
+
+                    Ok(create_account(
+                        id.to_string().as_str(),
+                        name.as_str(),
+                        email.as_str(),
+                        balance,
+                    ))
+                });
+
+                match account {
+                    Ok(a) => Ok(a),
+                    Err(e) => Err(AccountError::RetrievalError(e.to_string())),
+                }
+            }
+            Err(e) => Err(AccountError::RetrievalError(e.to_string())),
+        }
     }
 
     fn get_account_by_email(&self, email: &str) -> Result<Account, kids_bank_lib::AccountError> {
-        Err(kids_bank_lib::AccountError::DoesNotExist)
+        let stat_res = self
+            .connection
+            .prepare("SELECT * FROM accounts WHERE email = :email");
+        match stat_res {
+            Ok(mut stat) => {
+                let account = stat.query_row(&[(":email", email)], |row| {
+                    let id: i32 = row.get(0)?;
+                    let name: String = row.get(1)?;
+                    let email: String = row.get(2)?;
+                    let balance: f64 = row.get(3)?;
+
+                    Ok(create_account(
+                        id.to_string().as_str(),
+                        name.as_str(),
+                        email.as_str(),
+                        balance,
+                    ))
+                });
+
+                match account {
+                    Ok(a) => Ok(a),
+                    Err(e) => Err(AccountError::RetrievalError(e.to_string())),
+                }
+            }
+            Err(e) => Err(AccountError::RetrievalError(e.to_string())),
+        }
     }
 
     fn deposit(&self, account_id: &str, amount: f64) -> Result<f64, kids_bank_lib::AccountError> {
