@@ -28,9 +28,23 @@ impl Client {
             Err(e) => Err(e),
         }
     }
+}
 
-    pub fn get_all_accounts(&self) -> Result<Vec<Account>, AccountError> {
-        let stat_res = &self.connection.prepare("SELECT * FROM accounts");
+impl AccountHandler for Client {
+    fn create_account(&self, name: &str, email: &str) -> Result<bool, kids_bank_lib::AccountError> {
+        let result = self.connection.execute(
+            "INSERT INTO accounts (name, email) VALUES (?1, ?2)",
+            (name.to_string(), email.to_string()),
+        );
+
+        match result {
+            Ok(_) => Ok(true),
+            Err(e) => Err(kids_bank_lib::AccountError::CreationError(format!("{}", e))),
+        }
+    }
+
+    fn get_accounts(&self) -> Result<Vec<Account>, kids_bank_lib::AccountError> {
+        let stat_res = self.connection.prepare("SELECT * FROM accounts");
         match stat_res {
             Ok(mut stat) => {
                 let accounts_iter = stat.query_map([], |row| {
@@ -39,44 +53,31 @@ impl Client {
                     let email: String = row.get(2)?;
                     let balance: f64 = row.get(3)?;
 
-                    return create_account(
+                    Ok(create_account(
                         id.to_string().as_str(),
                         name.as_str(),
                         email.as_str(),
                         balance,
-                    );
+                    ))
                 });
 
-                Ok(accounts_iter)
+                let accounts_iter = match accounts_iter {
+                    Ok(ai) => ai,
+                    Err(e) => return Err(AccountError::RetrievalError(e.to_string())),
+                };
+
+                let mut accounts = Vec::new();
+                for acct in accounts_iter {
+                    accounts.push(acct.expect("Should be an account"));
+                }
+                Ok(accounts)
             }
-            Err(e) => return Err(AccountError::RetrievalError(e.to_string())),
+            Err(e) => Err(AccountError::RetrievalError(e.to_string())),
         }
-    }
-}
-
-impl AccountHandler for Client {
-    fn create_account(
-        &self,
-        name: &str,
-        email: &str,
-    ) -> Result<Account, kids_bank_lib::AccountError> {
-        let result = &self.connection.execute(
-            "INSERT INTO accounts (name, email) VALUES (?1, ?2)",
-            (name.to_string(), email.to_string()),
-        );
-
-        match result {
-            Ok(id) => {}
-            Err(e) => Err(kids_bank_lib::AccountError::CreationError(format!("{}", e))),
-        }
-    }
-
-    fn get_accounts(&self) -> Result<Vec<Account>, kids_bank_lib::AccountError> {
-        Err(kids_bank_lib::AccountError::DoesNotExist)
     }
 
     fn get_account_by_id(&self, id: &str) -> Result<Account, kids_bank_lib::AccountError> {
-        Err(kids_bank_lib::AccountError::DoesNotExist)
+        let stat_res = self.connection.prepare("SELECT id FROM accounts WHERE id =  ")
     }
 
     fn get_account_by_email(&self, email: &str) -> Result<Account, kids_bank_lib::AccountError> {
