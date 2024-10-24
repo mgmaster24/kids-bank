@@ -15,6 +15,7 @@ pub struct Account {
 pub enum AccountError {
     CreationError(String),
     RetrievalError(String),
+    BalanceError(String),
     Overdraft,
     NegativeAmount,
     DepositError,
@@ -30,6 +31,10 @@ impl fmt::Display for AccountError {
                 f.write_str(&err_msg)
             }
             AccountError::RetrievalError(s) => {
+                let err_msg = "Failed to get account! Reason: ".to_owned() + s;
+                f.write_str(&err_msg)
+            }
+            AccountError::BalanceError(s) => {
                 let err_msg = "Failed to get account! Reason: ".to_owned() + s;
                 f.write_str(&err_msg)
             }

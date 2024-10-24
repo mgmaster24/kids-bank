@@ -38,17 +38,17 @@ pub fn get_commands() -> BTreeMap<String, Command> {
         },
     );
     commands.insert(
-        "get accounts".to_string(),
+        "get_accounts".to_string(),
         Command {
-            name: "get account".to_string(),
+            name: "get_accounts".to_string(),
             description: String::from("Retrieves all the available account for Kids Bank."),
             callback: cmd_get_accounts::get_accounts,
         },
     );
     commands.insert(
-        "create account".to_string(),
+        "create_account".to_string(),
         Command {
-            name: "create account".to_string(),
+            name: "create_account".to_string(),
             description: String::from("Creates a Kids Bank account."),
             callback: cmd_create_account::create_account,
         },
