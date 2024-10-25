@@ -11,8 +11,8 @@ pub fn get_accounts(client: &Client, args: &[String]) {
     match accounts_res {
         Ok(accounts) => {
             for account in accounts {
-                println!("/t Account Holder:{}", account.user.name());
-                println!("/t Balance: {}", account.balance);
+                println!("\t Account Holder: {}", account.user.name());
+                println!("\t Balance: {}", account.balance);
             }
         }
         Err(e) => println!("{}", e),

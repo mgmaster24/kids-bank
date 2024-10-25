@@ -25,7 +25,7 @@ impl Client {
 
         let result = self.connection.execute(
             "CREATE TABLE accounts (
-                id INTERGER PRIMARY KEY,
+                id INTEGER PRIMARY KEY,
                 name TEXT NOT NULL,
                 email TEXT NOT NULL,
                 balance REAL DEFAULT 0.0 NOT NULL
@@ -83,9 +83,9 @@ impl Client {
                     return Ok(balance);
                 }
 
-                Err(AccountError::BalanceError(
-                    "Failed to execute the update statement".to_string(),
-                ))
+                Err(AccountError::BalanceError(String::from(
+                    "Failed to update balance",
+                )))
             }
             Err(e) => Err(AccountError::BalanceError(e.to_string())),
         }
