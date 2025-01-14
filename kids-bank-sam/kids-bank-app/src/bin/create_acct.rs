@@ -1,5 +1,4 @@
-use kids_bank_lib::AsyncAccountHandler;
-use kids_bank_sam::DynamoClient;
+use kids_bank_lib::{dynamo_client::DynamoClient, AsyncAccountHandler};
 use lambda_http::{run, service_fn, Body, Error, Request, RequestExt, Response};
 use std::env;
 
