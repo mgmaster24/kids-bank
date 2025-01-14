@@ -4,6 +4,8 @@ mod users;
 use async_trait::async_trait;
 
 pub use acct_management::{Account, AccountError};
+pub mod dynamo_client;
+pub mod postgres_client;
 
 pub fn create_user_account(name: &str, email: &str) -> Result<Account, String> {
     let user = users::User::new(name, email);

@@ -5,4 +5,7 @@ edition = "2021"
 
 [dependencies]
 async-trait = "0.1.83"
+aws-sdk-config = "1.48.0"
+aws-config = { version = "1.5.8", features = ["behavior-version-latest"] }
+aws-sdk-dynamodb = "1.50.0"
 serde = { version = "1.0.210", features = ["derive"] }

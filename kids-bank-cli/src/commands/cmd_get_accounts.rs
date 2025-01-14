@@ -10,6 +10,11 @@ pub fn get_accounts(client: &Client, args: &[String]) {
     let accounts_res = client.get_accounts();
     match accounts_res {
         Ok(accounts) => {
+            if accounts.is_empty() {
+                println!("No Accounts Found!");
+                return;
+            }
+
             for account in accounts {
                 println!("\t Account Holder: {}", account.user.name());
                 println!("\t Balance: {}", account.balance);
