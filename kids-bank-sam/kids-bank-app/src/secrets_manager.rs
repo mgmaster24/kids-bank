@@ -6,7 +6,7 @@ use aws_config::{self, BehaviorVersion, Region};
 use aws_sdk_secretsmanager;
 
 #[::tokio::main]
-async fn main() -> Result<(), aws_sdk_secretsmanager::Error> {
+async fn get_turso_secrets() -> Result<(), aws_sdk_secretsmanager::Error> {
     let secret_name = "kidsbank/turso";
     let region = Region::new("us-east-1");
 
