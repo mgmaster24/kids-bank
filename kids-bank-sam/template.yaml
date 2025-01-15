@@ -35,7 +35,11 @@ Resources:
               KeyType: HASH
           Projection:
             ProjectionType: ALL
-  
+    KidsBankRDS:
+      Type: AWS::RDS::DBInstance
+      UpdateReplacePolict: Retain
+      DeletePolicy: Retain
+
   CreateAccountFunction:
     Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
     Metadata:
@@ -146,12 +150,37 @@ Resources:
             TableName: !Ref AccountsTable
         - DynamoDBReadPolicy:
             TableName: !Ref AccountsTable
+  UpdateAccountsFunction:
+    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+    Metadata:
+      BuildMethod: rust-cargolambda
+      BuildProperties:
+        Binary: update_acct_balances
+    Properties:
+      CodeUri: kids-bank-app/
+      Events:
+        Withdraw:
+          Type: Schedule # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
+          Properties:
+            Schedule: rate(30 days)
+            Name: interest-schedule
+            Description: Schedule to update interest on all accounts
+            Enabled: True
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref AccountsTable
+      Policies:
+        - DynamoDBWritePolicy: # More info about SAM policy templates: https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-policy-templates.html
+            TableName: !Ref AccountsTable
+        - DynamoDBReadPolicy:
+            TableName: !Ref AccountsTable
+
 
 Outputs:
   # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function
   # Find out more about other implicit resources you can reference within SAM
   # https://github.com/awslabs/serverless-application-model/blob/master/docs/internals/generated_resources.rst#api
-  KidsBankAPIGatewayi:
+  KidsBankAPIGateway:
     Description: "Base API Gateway endpoint URL for kids bank functions"
     Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/"
   CreateAccountFunction:
@@ -169,6 +198,9 @@ Outputs:
   WithdrawFunction:
     Description: "Withdraw Lambda Function ARN"
     Value: !GetAtt WithdrawFunction.Arn
+  UpdateAccountsFunction:
+    Description: "Update Account Lambda Function ARN"
+    Value: !GetAtt UpdateAccountsFunction.Arn
   AccountsTable:
     Description: "DynamoDB table name"
     Value: !GetAtt AccountsTable.Arn
