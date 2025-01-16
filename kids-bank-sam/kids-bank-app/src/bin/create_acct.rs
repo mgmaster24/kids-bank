@@ -1,36 +1,44 @@
 use kids_bank_lib::{dynamo_client::DynamoClient, AsyncAccountHandler};
-use lambda_http::{run, service_fn, Body, Error, Request, RequestExt, Response};
+use kids_bank_sam::CreateAccountRequestBody;
+use lambda_http::{run, service_fn, Body, Error, Request, RequestPayloadExt, Response};
 use std::env;
 
-/// This is the main body for the function.
-/// Write your code inside it.
-/// There are some code example in the  following URLs:
-/// - https://github.com/awslabs/aws-lambda-rust-runtime/tree/main/examples
-/// - https://github.com/aws-samples/serve:rless-rust-demo/
 async fn create_acct(request: Request) -> Result<Response<Body>, Error> {
-    // Prepare the response
     let config = aws_config::load_from_env().await;
     let table_name = env::var("TABLE_NAME").expect("TABLE_NAME must be set");
     if let Ok(dc) = DynamoClient::new(&config, &table_name) {
-        let query_parameters = request.query_string_parameters();
-        let email = query_parameters
-            .first("email")
-            .expect("email query parameter should exist");
-        let name = query_parameters
-            .first("name")
-            .expect("name query parameter should exist");
-        let acct_res = dc.create_account_async(name, email).await;
-        match acct_res {
-            Ok(a) => {
-                return Ok(Response::builder()
-                    .status(200)
-                    .body(serde_json::to_string(&a)?.into())?)
-            }
+        match request.payload::<CreateAccountRequestBody>() {
+            Ok(account_opt) => match account_opt {
+                Some(account_req) => {
+                    let acct_res = dc
+                        .create_account_async(
+                            &account_req.name,
+                            &account_req.email,
+                            &account_req.password,
+                        )
+                        .await;
+                    match acct_res {
+                        Ok(a) => {
+                            return Ok(Response::builder()
+                                .status(200)
+                                .body(serde_json::to_string(&a)?.into())?)
+                        }
+                        Err(e) => {
+                            let err_str = format!("Failed to create account {e:#}");
+                            return Ok(Response::builder().status(500).body(err_str.into())?);
+                        }
+                    };
+                }
+                None => {
+                    let err_str = "Failed to create account request";
+                    return Ok(Response::builder().status(500).body(err_str.into())?);
+                }
+            },
             Err(e) => {
-                let err_str = format!("Failed to create account {e:#}");
+                let err_str = format!("Failed to deserialize payload: {e:#}");
                 return Ok(Response::builder().status(500).body(err_str.into())?);
             }
-        };
+        }
     }
 
     Ok(Response::builder()

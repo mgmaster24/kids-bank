@@ -1,5 +1,4 @@
-use crate::acct_management::{Account, AccountError};
-use crate::{create_account, create_user_account, AsyncAccountHandler};
+use crate::{create_account, create_user_account, Account, AccountError, AsyncAccountHandler};
 use async_trait::async_trait;
 use aws_sdk_dynamodb::types::AttributeValue;
 use std::{collections::HashMap, f64};
@@ -24,8 +23,9 @@ impl DynamoClient {
         &self,
         email: &str,
         name: &str,
+        password: &str,
     ) -> Result<Account, AccountError> {
-        self.create_account_async(email, name).await
+        self.create_account_async(email, name, password).await
     }
 
     fn table_name(&self) -> String {
@@ -94,6 +94,11 @@ impl DynamoClient {
             .expect("expected name value to exist")
             .as_s()
             .unwrap();
+        let pw = attr_map
+            .get("password")
+            .expect("expected password value to exist")
+            .as_s()
+            .unwrap();
         let balance = attr_map
             .get("balance")
             .expect("expected balance value to exist")
@@ -101,19 +106,24 @@ impl DynamoClient {
             .unwrap()
             .parse::<f64>()
             .expect("expect balance to be f64");
-        create_account(id, name, email, balance)
+        create_account(id, name, email, pw, balance)
     }
 }
 
 #[async_trait]
 impl AsyncAccountHandler for DynamoClient {
-    async fn create_account_async(&self, name: &str, email: &str) -> Result<Account, AccountError> {
+    async fn create_account_async(
+        &self,
+        name: &str,
+        email: &str,
+        password: &str,
+    ) -> Result<Account, AccountError> {
         // get account by provided email
         if (self.get_account_by_email_async(email).await).is_ok() {
             return Err(AccountError::AccountExists);
         }
 
-        if let Ok(account) = create_user_account(name, email) {
+        if let Ok(account) = create_user_account(name, email, password) {
             match &self
                 .client
                 .put_item()
@@ -121,6 +131,7 @@ impl AsyncAccountHandler for DynamoClient {
                 .item("id", AttributeValue::S(account.id.to_string()))
                 .item("email", AttributeValue::S(account.user.email().to_string()))
                 .item("name", AttributeValue::S(account.user.name().to_string()))
+                .item("password", AttributeValue::S(account.user.pw().to_string()))
                 .item("balance", AttributeValue::N(account.balance.to_string()))
                 .send()
                 .await

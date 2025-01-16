@@ -1,27 +1,31 @@
-pub mod acct_management;
+pub mod accounts;
 pub mod dynamo_client;
-pub mod postgres_client;
 pub mod users;
-pub use acct_management::{Account, AccountError};
+use crate::accounts::{Account, AccountError};
 
 use async_trait::async_trait;
 
-pub fn create_user_account(name: &str, email: &str) -> Result<Account, String> {
-    let user = users::User::new(name, email);
-    Ok(acct_management::Account::new(user))
+pub fn create_user_account(name: &str, email: &str, pw: &str) -> Result<Account, String> {
+    let user = users::User::new(name, email, pw);
+    Ok(Account::new(user))
 }
 
-pub fn create_account(id: &str, name: &str, email: &str, balance: f64) -> Account {
+pub fn create_account(id: &str, name: &str, email: &str, pw: &str, balance: f64) -> Account {
     Account {
         id: id.to_string(),
-        user: users::User::new(name, email),
+        user: users::User::new(name, email, pw),
         balance,
     }
 }
 
 #[async_trait]
 pub trait AsyncAccountHandler {
-    async fn create_account_async(&self, name: &str, email: &str) -> Result<Account, AccountError>;
+    async fn create_account_async(
+        &self,
+        name: &str,
+        email: &str,
+        pw: &str,
+    ) -> Result<Account, AccountError>;
     async fn get_accounts_async(&self) -> Result<Vec<Account>, AccountError>;
     async fn get_account_by_id_async(&self, id: &str) -> Result<Account, AccountError>;
     async fn get_account_by_email_async(&self, email: &str) -> Result<Account, AccountError>;
@@ -44,7 +48,7 @@ mod tests {
 
     #[test]
     fn it_works() {
-        let res = create_user_account("some user", "someuser@email.com");
+        let res = create_user_account("some user", "someuser@email.com", "some_pw");
         assert!(res.is_ok());
     }
 }

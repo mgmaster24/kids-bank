@@ -97,18 +97,18 @@ mod tests {
 
     #[test]
     fn test_acct_creation() {
-        let user = User::new("Test User", "TestEmail@test.com");
+        let user = User::new("Test User", "TestEmail@test.com", "some_pass_word");
         let acct = Account::new(user);
         assert_eq!(acct.balance, 0.0);
 
-        let user2 = User::new("Test User2", "TestEmail2@test.com");
+        let user2 = User::new("Test User2", "TestEmail2@test.com", "some_pass_word");
         let acct2 = Account::new(user2);
         assert_ne!(acct.id, acct2.id);
     }
 
     #[test]
     fn test_acct_deposit_ok() {
-        let user = User::new("Test User", "TestEmail@test.com");
+        let user = User::new("Test User", "TestEmail@test.com", "some_pass_word");
         let mut acct = Account::new(user);
         let res = acct.deposit(42.0);
         assert!(res.is_ok());
@@ -118,7 +118,7 @@ mod tests {
 
     #[test]
     fn test_acct_deposit_error() {
-        let user = User::new("Test User", "TestEmail@test.com");
+        let user = User::new("Test User", "TestEmail@test.com", "some_pass_word");
         let mut acct = Account::new(user);
         let res = acct.deposit(-42.0);
         assert!(res.is_err());
@@ -127,7 +127,7 @@ mod tests {
 
     #[test]
     fn test_acct_withdraw_ok() {
-        let user = User::new("Test User", "TestEmail@test.com");
+        let user = User::new("Test User", "TestEmail@test.com", "some_pass_word");
         let mut acct = Account::new(user);
         let dres = acct.deposit(42.0);
         let wres = acct.withdraw(24.0);
@@ -139,7 +139,7 @@ mod tests {
 
     #[test]
     fn test_acct_overdraft_error() {
-        let user = User::new("Test User", "TestEmail@test.com");
+        let user = User::new("Test User", "TestEmail@test.com", "some_pass_word");
         let mut acct = Account::new(user);
         let dres = acct.deposit(42.0);
         let wres = acct.withdraw(43.0);
@@ -150,7 +150,7 @@ mod tests {
 
     #[test]
     fn test_acct_negative_withdraw_error() {
-        let user = User::new("Test User", "TestEmail@test.com");
+        let user = User::new("Test User", "TestEmail@test.com", "some_pass_word");
         let mut acct = Account::new(user);
         let dres = acct.deposit(42.0);
         let wres = acct.withdraw(-43.0);
