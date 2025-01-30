@@ -20,6 +20,14 @@ impl User {
         }
     }
 
+    pub fn from_attributes(name: &str, email: &str, password: &str) -> Self {
+        Self {
+            name: name.to_string(),
+            email: email.to_string(),
+            password: password.to_string(),
+        }
+    }
+
     pub fn name(&self) -> &String {
         &self.name
     }

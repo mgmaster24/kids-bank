@@ -1,0 +1,1 @@
+curl -H "authorization: token eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ0ZXN0QG1lLmNvbSIsImV4cCI6MTczODE3MjM0MH0.SqF00Z6jd6Gce1tZJoA7qG5j9_j88XvA9BJzIMJBkj8" "https://0ka4ihmuyj.execute-api.us-east-1.amazonaws.com/dev/account?id=testme_test@me.com"

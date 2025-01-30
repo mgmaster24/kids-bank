@@ -1,4 +1,6 @@
-use crate::{create_account, create_user_account, Account, AccountError, AsyncAccountHandler};
+use crate::{
+    create_acct_from_attributes, create_user_account, Account, AccountError, AsyncAccountHandler,
+};
 use async_trait::async_trait;
 use aws_sdk_dynamodb::types::AttributeValue;
 use std::{collections::HashMap, f64};
@@ -21,11 +23,11 @@ impl DynamoClient {
 
     pub async fn create_new_account(
         &self,
-        email: &str,
         name: &str,
+        email: &str,
         password: &str,
     ) -> Result<Account, AccountError> {
-        self.create_account_async(email, name, password).await
+        self.create_account_async(name, email, password).await
     }
 
     fn table_name(&self) -> String {
@@ -106,7 +108,7 @@ impl DynamoClient {
             .unwrap()
             .parse::<f64>()
             .expect("expect balance to be f64");
-        create_account(id, name, email, pw, balance)
+        create_acct_from_attributes(id, name, email, pw, balance)
     }
 }
 
@@ -174,8 +176,33 @@ impl AsyncAccountHandler for DynamoClient {
     }
 
     async fn get_account_by_email_async(&self, email: &str) -> Result<Account, AccountError> {
-        self.get_item("email", AttributeValue::S(email.to_string()))
+        match &self
+            .client
+            .query()
+            .table_name(self.table_name())
+            .index_name("email-index")
+            .key_condition_expression("#email = :email_value")
+            .expression_attribute_names("#email", "email")
+            .expression_attribute_values(":email_value", AttributeValue::S(email.to_string()))
+            .send()
             .await
+        {
+            Ok(res) => {
+                if let Some(items) = &res.items {
+                    if let Some(item) = items.iter().next() {
+                        Ok(self.get_account_from_attributes(item))
+                    } else {
+                        Err(AccountError::DoesNotExist)
+                    }
+                } else {
+                    Err(AccountError::DoesNotExist)
+                }
+            }
+            Err(err) => Err(AccountError::RetrievalError(format!(
+                "DynamoDB query error: {}",
+                err
+            ))),
+        }
     }
 
     async fn deposit_async(&self, account_id: &str, amount: f64) -> Result<f64, AccountError> {

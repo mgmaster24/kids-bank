@@ -1,0 +1,25 @@
+# Ignore Rust build artifacts
+target/
+*.o
+*.rlib
+*.so
+Cargo.lock
+
+# Ignore version control files
+.git/
+.gitignore
+
+# Ignore documentation and tests
+docs/
+tests/
+examples/
+
+# Ignore IDE/project-specific files
+*.iml
+.idea/
+.vscode/
+.DS_Store
+
+# Ignore temporary files
+*.tmp
+*.log

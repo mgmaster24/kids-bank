@@ -15,6 +15,22 @@ pub fn create_account(id: &str, name: &str, email: &str, pw: &str, balance: f64)
         id: id.to_string(),
         user: users::User::new(name, email, pw),
         balance,
+        current_apr: 0.05,
+    }
+}
+
+pub fn create_acct_from_attributes(
+    id: &str,
+    name: &str,
+    email: &str,
+    pw: &str,
+    balance: f64,
+) -> Account {
+    Account {
+        id: id.to_string(),
+        user: users::User::from_attributes(name, email, pw),
+        balance,
+        current_apr: 0.05,
     }
 }
 

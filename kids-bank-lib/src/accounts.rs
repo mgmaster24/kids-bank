@@ -9,6 +9,7 @@ pub struct Account {
     pub id: String,
     pub user: User,
     pub balance: f64,
+    pub current_apr: f64,
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -64,6 +65,7 @@ impl Account {
             id: id.to_owned() + "_" + user.email().as_str(),
             user,
             balance: 0.0,
+            current_apr: 0.05,
         }
     }
 

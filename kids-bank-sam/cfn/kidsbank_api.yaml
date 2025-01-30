@@ -1,0 +1,237 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  KidsBankApi
+
+  The serverless application for Kids Bank.  Will provide a CRUD application for kids account handling
+
+Parameters:
+  CustomAuthorizerFunctionArn:
+    Type: String
+    Description: The ARN of the Custom Authorizer Function from the authorizer stack.
+  AccountsTableName:
+    Type: String
+    Description: The name of the accounts table from the accounts table stack.
+  TokenSecretArn:
+    Type: String
+    Description: The ARN of the token secret from secretsmanager.
+
+Globals:
+  Function:
+    Timeout: 3
+    Handler: bootstrap
+    Runtime: provided.al2
+    Architectures:
+      - x86_64
+
+Resources:
+  KidsBankApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      Auth:
+        Authorizers:
+         CustomAuthorizer:
+          EnableSimpleResponses: false
+          AuthorizerPayloadFormatVersion: 2.0
+          FunctionArn: !Ref CustomAuthorizerFunctionArn
+          Identity:
+            Headers:
+              - Authorization
+        DefaultAuthorizer: CustomAuthorizer
+      StageName: "dev"
+    
+  CreateAccountFunction:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: rust-cargolambda
+      BuildProperties:
+        Binary: create-acct
+    Properties:
+      CodeUri: ../kids-bank-app/
+      Events:
+        Create:
+          Type: Api
+          Properties:
+            Path: /create
+            Method: put
+            RestApiId: !Ref KidsBankApi
+            Auth: 
+              Authorizer: NONE
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref AccountsTableName
+      Policies:
+        - DynamoDBWritePolicy:
+            TableName: !Ref AccountsTableName
+        - DynamoDBReadPolicy:
+            TableName: !Ref AccountsTableName
+
+  LoginFunction:
+    Type: AWS::Serverless::Function 
+    Metadata:
+      BuildMethod: rust-cargolambda
+      BuildProperties:
+        Binary: login
+    Properties:
+      CodeUri: ../kids-bank-app/
+      Events:
+        Login:
+          Type: Api 
+          Properties:
+            Path: /login
+            Method: post
+            RestApiId: !Ref KidsBankApi
+            Auth: 
+              Authorizer: NONE
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref AccountsTableName
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref AccountsTableName
+        - AWSSecretsManagerGetSecretValuePolicy:
+            SecretArn: !Ref TokenSecretArn
+
+  GetAccountsFunction:
+    Type: AWS::Serverless::Function    
+    Metadata:
+      BuildMethod: rust-cargolambda
+      BuildProperties:
+        Binary: get-accounts
+    Properties:
+      CodeUri: ../kids-bank-app/
+      Events:
+        GetAccounts:
+          Type: Api          
+          Properties:
+            Path: /accounts
+            Method: get
+            RestApiId: !Ref KidsBankApi
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref AccountsTableName
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref AccountsTableName
+
+  GetAccountFunction:
+    Type: AWS::Serverless::Function    
+    Metadata:
+      BuildMethod: rust-cargolambda
+      BuildProperties:
+        Binary: get-account
+    Properties:
+      CodeUri: ../kids-bank-app/
+      Events:
+        GetAccount:
+          Type: Api 
+          Properties:
+            Path: /account
+            Method: get
+            RestApiId: !Ref KidsBankApi
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref AccountsTableName
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref AccountsTableName
+
+  DepositFunction:
+    Type: AWS::Serverless::Function 
+    Metadata:
+      BuildMethod: rust-cargolambda
+      BuildProperties:
+        Binary: deposit
+    Properties:
+      CodeUri: ../kids-bank-app/
+      Events:
+        Deposit:
+          Type: Api 
+          Properties:
+            Path: /deposit
+            Method: post
+            RestApiId: !Ref KidsBankApi
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref AccountsTableName
+      Policies:
+        - DynamoDBWritePolicy: 
+            TableName: !Ref AccountsTableName
+        - DynamoDBReadPolicy:
+            TableName: !Ref AccountsTableName
+
+  WithdrawFunction:
+    Type: AWS::Serverless::Function 
+    Metadata:
+      BuildMethod: rust-cargolambda
+      BuildProperties:
+        Binary: withdraw
+    Properties:
+      CodeUri: ../kids-bank-app/
+      Events:
+        Withdraw:
+          Type: Api
+          Properties:
+            Path: /withdraw
+            Method: post
+            RestApiId: !Ref KidsBankApi
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref AccountsTableName
+      Policies:
+        - DynamoDBWritePolicy: 
+            TableName: !Ref AccountsTableName
+        - DynamoDBReadPolicy:
+            TableName: !Ref AccountsTableName
+
+  UpdateAccountsFunction:
+    Type: AWS::Serverless::Function 
+    Metadata:
+      BuildMethod: rust-cargolambda
+      BuildProperties:
+        Binary: update-balances
+    Properties:
+      CodeUri: ../kids-bank-app/
+      Events:
+        Update:
+          Type: Schedule
+          Properties:
+            Schedule: rate(30 days)
+            Name: interest-schedule
+            Description: Schedule to update interest on all accounts
+            Enabled: True
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref AccountsTableName
+      Policies:
+        - DynamoDBWritePolicy: 
+            TableName: !Ref AccountsTableName
+        - DynamoDBReadPolicy:
+            TableName: !Ref AccountsTableName
+
+Outputs:
+  KidsBankApiGateway:
+    Description: "Base API Gateway endpoint URL for kids bank functions"
+    Value: !Sub "https://${KidsBankApi}.execute-api.${AWS::Region}.amazonaws.com/dev/"
+  CreateAccountFunctionARN:
+    Description: "Create Account Lambda Function ARN"
+    Value: !GetAtt CreateAccountFunction.Arn 
+  LoginFunctionARN:
+    Description: "Login Lambda Function ARN"
+    Value: !GetAtt LoginFunction.Arn
+  GetAccountsFunction:
+    Description: "Get Accounts Lambda Function ARN"
+    Value: !GetAtt GetAccountsFunction.Arn
+  GetAccountFunction:
+    Description: "Get Account Lambda Function ARN"
+    Value: !GetAtt GetAccountFunction.Arn
+  DepositFunction:
+    Description: "Deposit Lambda Function ARN"
+    Value: !GetAtt DepositFunction.Arn
+  WithdrawFunction:
+    Description: "Withdraw Lambda Function ARN"
+    Value: !GetAtt WithdrawFunction.Arn
+  UpdateAccountsFunction:
+    Description: "Update Account Lambda Function ARN"
+    Value: !GetAtt UpdateAccountsFunction.Arn
+  

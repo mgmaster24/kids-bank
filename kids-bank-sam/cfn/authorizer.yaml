@@ -1,0 +1,43 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  Custom Authorizer for Kids Bank
+
+Parameters:
+  TokenSecretArn:
+    Type: String
+    Description: The ARN of the token secret from secretsmanager.
+
+Resources:
+  # Lambda function for Custom Authorizer
+  CustomAuthorizerFunction:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: rust-cargolambda
+      BuildProperties:
+        Binary: authorizer
+    Properties:
+      CodeUri: ../kids-bank-app/
+      Handler: bootstrap
+      MemorySize: 128
+      Timeout: 5
+      Runtime: provided.al2
+      Architectures:
+        - x86_64
+      Policies:
+        - AWSSecretsManagerGetSecretValuePolicy:
+            SecretArn: !Ref TokenSecretArn
+
+
+  ApiGatewayAuthorizerInvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !GetAtt CustomAuthorizerFunction.Arn
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:*/*"
+  
+Outputs:
+  CustomAuthorizerFunctionArn:
+    Description: "ARN for the custom authorizer lambda"
+    Value: !GetAtt CustomAuthorizerFunction.Arn

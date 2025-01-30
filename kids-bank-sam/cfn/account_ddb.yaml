@@ -1,0 +1,38 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  The definition for the DynamoDB Accounts table
+
+Resources:  
+  AccountsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: "Accounts"
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+        - AttributeName: email
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+      BillingMode: PAY_PER_REQUEST
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      GlobalSecondaryIndexes:
+        - IndexName: email-index
+          KeySchema:
+            - AttributeName: email
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL
+
+Outputs:
+  AccountsTable:
+    Description: "DynamoDB Accounts table name"
+    Value: !Ref AccountsTable
+
+  AccountsTableArn:
+    Description: "The ARN of the Accounts DynamoDB table"
+    Value: !GetAtt AccountsTable.Arn
+
