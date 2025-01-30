@@ -25,7 +25,7 @@ async fn update_account_balances(_event: LambdaEvent<Value>) -> Result<(), Error
 
             Ok(())
         }
-        Err(e) => Err(format!("Failed to get accounts {e:#}").into()),
+        Err(e) => Err(format!("Failed to get accounts {}", e).into()),
     }
 }
 

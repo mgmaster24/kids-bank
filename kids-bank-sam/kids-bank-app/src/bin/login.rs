@@ -84,5 +84,5 @@ async fn login(request: Request) -> Result<Response<Body>, Error> {
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
-    run(service_fn(|request: Request| login(request))).await
+    run(service_fn(login)).await
 }

@@ -27,5 +27,5 @@ async fn withdraw(request: Request) -> Result<Response<Body>, Error> {
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
-    run(service_fn(|request: Request| withdraw(request))).await
+    run(service_fn(withdraw)).await
 }

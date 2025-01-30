@@ -27,5 +27,5 @@ async fn deposit(request: Request) -> Result<Response<Body>, Error> {
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
-    run(service_fn(|request: Request| deposit(request))).await
+    run(service_fn(deposit)).await
 }

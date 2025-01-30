@@ -42,5 +42,5 @@ async fn get_acct(request: Request) -> Result<Response<Body>, Error> {
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
-    run(service_fn(|request: Request| get_acct(request))).await
+    run(service_fn(get_acct)).await
 }

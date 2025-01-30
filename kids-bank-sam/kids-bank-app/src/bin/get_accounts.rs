@@ -21,5 +21,5 @@ async fn get_accts(_request: Request) -> Result<Response<Body>, Error> {
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
-    run(service_fn(|request: Request| get_accts(request))).await
+    run(service_fn(get_accts)).await
 }
