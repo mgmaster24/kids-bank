@@ -1,4 +1,4 @@
-PUT https://w3i1l95kwi.execute-api.us-east-1.amazonaws.com/create
+PUT https://{api-id}.execute-api.us-east-1.amazonaws.com/create
 content-type: application/json
 
 {
@@ -9,7 +9,7 @@ content-type: application/json
 
 ###
 
-POST https://gwdhoxqazf.execute-api.us-east-1.amazonaws.com/dev/login
+POST https://{api-id}.execute-api.us-east-1.amazonaws.com/dev/login
 content-type: application/json
 
 {
@@ -19,5 +19,5 @@ content-type: application/json
 
 ###
 
-GET https://gwdhoxqazf.execute-api.us-east-1.amazonaws.com/dev/account?id=testme_test@me.com
-authorization: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ0ZXN0QG1lLmNvbSIsImV4cCI6MTczODE3MjM0MH0.SqF00Z6jd6Gce1tZJoA7qG5j9_j88XvA9BJzIMJBkj8
+GET https://{api-id}.execute-api.us-east-1.amazonaws.com/dev/account?id=testme_test@me.com
+authorization: token
