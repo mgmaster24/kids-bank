@@ -34,7 +34,7 @@ impl DynamoClient {
         self.table_name.to_string()
     }
 
-    async fn get_item(
+    async fn get_account(
         &self,
         attr: &str,
         attr_val: AttributeValue,
@@ -61,7 +61,7 @@ impl DynamoClient {
         }
     }
 
-    async fn update_item(&self, id: &str, balance: f64) -> Result<f64, AccountError> {
+    async fn update_balance(&self, id: &str, balance: f64) -> Result<f64, AccountError> {
         let request = &self
             .client
             .update_item()
@@ -120,7 +120,6 @@ impl AsyncAccountHandler for DynamoClient {
         email: &str,
         password: &str,
     ) -> Result<Account, AccountError> {
-        // get account by provided email
         if (self.get_account_by_email_async(email).await).is_ok() {
             return Err(AccountError::AccountExists);
         }
@@ -172,7 +171,8 @@ impl AsyncAccountHandler for DynamoClient {
     }
 
     async fn get_account_by_id_async(&self, id: &str) -> Result<Account, AccountError> {
-        self.get_item("id", AttributeValue::S(id.to_string())).await
+        self.get_account("id", AttributeValue::S(id.to_string()))
+            .await
     }
 
     async fn get_account_by_email_async(&self, email: &str) -> Result<Account, AccountError> {
@@ -210,7 +210,7 @@ impl AsyncAccountHandler for DynamoClient {
             let dep_res = acct.deposit(amount);
             match dep_res {
                 Ok(balance) => {
-                    let balance_res = self.update_item(account_id, balance).await;
+                    let balance_res = self.update_balance(account_id, balance).await;
                     match balance_res {
                         Ok(b) => return Ok(b),
                         Err(e) => return Err(e),
@@ -228,7 +228,7 @@ impl AsyncAccountHandler for DynamoClient {
             let wd_res = acct.withdraw(amount);
             match wd_res {
                 Ok(balance) => {
-                    let withdraw_res = self.update_item(account_id, balance).await;
+                    let withdraw_res = self.update_balance(account_id, balance).await;
                     match withdraw_res {
                         Ok(b) => return Ok(b),
                         Err(e) => return Err(e),

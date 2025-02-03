@@ -1,4 +1,4 @@
-PUT https://{api-id}.execute-api.us-east-1.amazonaws.com/create
+PUT https://{{$dotenv API_ID}}.execute-api.{{$dotenv REGION}}.amazonaws.com/{{$dotenv STAGE}}/create
 content-type: application/json
 
 {
@@ -9,7 +9,7 @@ content-type: application/json
 
 ###
 
-POST https://{api-id}.execute-api.us-east-1.amazonaws.com/dev/login
+POST https://{{$dotenv API_ID}}.execute-api.{{$dotenv REGION}}.amazonaws.com/{{$dotenv STAGE}}/login
 content-type: application/json
 
 {
@@ -19,5 +19,5 @@ content-type: application/json
 
 ###
 
-GET https://{api-id}.execute-api.us-east-1.amazonaws.com/dev/account?id=testme_test@me.com
+GET https://{{$dotenv API_ID}}.execute-api.{{$dotenv REGION}}.amazonaws.com/{{$dotenv STAGE}}/account?id=testme_test@me.com
 authorization: token

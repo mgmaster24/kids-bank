@@ -69,7 +69,7 @@ async fn login(request: Request) -> Result<Response<Body>, Error> {
                     .body(format!("Failed to generate token. error: {}", e).into())?);
             }
 
-            let json_resp = serde_json::json!({"token": t, "account": account});
+            let json_resp = serde_json::json!({"token": token.unwrap(), "account": account});
             let serialized = serde_json::to_string(&json_resp)?;
             Ok(Response::builder()
                 .status(200)
