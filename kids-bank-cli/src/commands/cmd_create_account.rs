@@ -1,8 +1,6 @@
-use std::io::{self, Write};
-
+use crate::db::Client;
 use kids_bank_lib::AccountHandler;
-
-use crate::db::sqlite_db::Client;
+use std::io::{self, Write};
 
 pub fn create_account(client: &Client, args: &[String]) {
     if !args.is_empty() {

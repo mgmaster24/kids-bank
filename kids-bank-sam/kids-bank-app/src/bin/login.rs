@@ -1,6 +1,6 @@
 use jsonwebtoken::{encode, EncodingKey, Header};
-use kids_bank_lib::{dynamo_client::DynamoClient, AsyncAccountHandler};
-use kids_bank_sam::{secrets_manager, Claims};
+use kids_bank_lib::{AsyncAccountHandler, DynamoClient};
+use kids_bank_sam::{get_token_secret, Claims};
 use lambda_http::{run, service_fn, Body, Error, Request, Response};
 use serde::Deserialize;
 use std::env;
@@ -44,18 +44,18 @@ async fn login(request: Request) -> Result<Response<Body>, Error> {
                     .body("Incorrect password".into())?);
             }
 
-            let token_secret_res = secrets_manager::get_token_secret().await;
+            let token_secret_res = get_token_secret().await;
             if let Err(e) = token_secret_res {
                 return Ok(Response::builder().status(500).body(e.into())?);
             }
 
-            let claims = Claims {
-                sub: account.user.email().to_string(),
-                exp: chrono::Utc::now()
+            let claims = Claims::new(
+                account.user.email().to_string(),
+                chrono::Utc::now()
                     .checked_add_signed(chrono::Duration::hours(1))
                     .unwrap()
                     .timestamp() as usize,
-            };
+            );
 
             let token = encode(
                 &Header::default(),

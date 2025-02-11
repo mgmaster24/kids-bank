@@ -1,1 +1,2 @@
-pub mod sqlite_db;
+mod sqlite;
+pub use crate::db::sqlite::Client;

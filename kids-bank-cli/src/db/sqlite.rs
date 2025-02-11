@@ -1,8 +1,7 @@
 use kids_bank_lib::{create_account, Account, AccountError, AccountHandler};
-use rusqlite;
 
 pub struct Client {
-    pub connection: rusqlite::Connection,
+    connection: rusqlite::Connection,
 }
 
 impl Client {
@@ -51,11 +50,13 @@ impl Client {
                     let name: String = row.get(1)?;
                     let email: String = row.get(2)?;
                     let balance: f64 = row.get(3)?;
+                    let pw: String = row.get(4)?;
 
                     Ok(create_account(
                         id.to_string().as_str(),
                         name.as_str(),
                         email.as_str(),
+                        pw.as_str(),
                         balance,
                     ))
                 });
@@ -114,11 +115,13 @@ impl AccountHandler for Client {
                     let name: String = row.get(1)?;
                     let email: String = row.get(2)?;
                     let balance: f64 = row.get(3)?;
+                    let pw: String = row.get(4)?;
 
                     Ok(create_account(
                         id.to_string().as_str(),
                         name.as_str(),
                         email.as_str(),
+                        pw.as_str(),
                         balance,
                     ))
                 });

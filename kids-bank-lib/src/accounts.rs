@@ -74,8 +74,7 @@ impl Account {
             return Err(AccountError::NegativeAmount);
         }
 
-        let balance = self.balance;
-        let remainder = balance - amount;
+        let remainder = self.balance - amount;
         if remainder < 0.0 {
             return Err(AccountError::Overdraft);
         }

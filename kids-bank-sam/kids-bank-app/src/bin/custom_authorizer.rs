@@ -1,6 +1,6 @@
 use chrono::Utc;
 use jsonwebtoken::{decode, Algorithm, DecodingKey, Validation};
-use kids_bank_sam::{secrets_manager, Claims};
+use kids_bank_sam::{get_token_secret, Claims};
 use lambda_runtime::{run, service_fn, Error, LambdaEvent};
 use serde::{Deserialize, Serialize};
 
@@ -47,13 +47,13 @@ async fn custom_authorizer(
         None => return Err("Missing authorization token".to_string().into()),
     };
 
-    let token_secret_res = secrets_manager::get_token_secret().await;
+    let token_secret_res = get_token_secret().await;
     if let Err(e) = token_secret_res {
         return Err(format!("Failed to get token secret. error: {}", e).into());
     }
 
     validate_token(auth_token, &token_secret_res.unwrap()).map(|claims| AuthResponse {
-        principal_id: claims.sub,
+        principal_id: claims.sub().to_string(),
         policy_document: create_policy(&event.payload.method_arn),
     })
 }
@@ -66,7 +66,7 @@ fn validate_token(token: &str, secret: &str) -> Result<Claims, Error> {
         &validation,
     )?;
 
-    if Utc::now().timestamp() > token_data.claims.exp as i64 {
+    if Utc::now().timestamp() > token_data.claims.exp() as i64 {
         return Err("Token expired".into());
     }
 

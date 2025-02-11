@@ -13,8 +13,11 @@ pub struct DynamoClient {
 
 impl DynamoClient {
     pub fn new(config: &aws_config::SdkConfig, table_name: &str) -> Result<Self, String> {
-        let client = aws_sdk_dynamodb::Client::new(config);
+        if table_name.is_empty() {
+            return Err("Table name must not be empty".to_string());
+        }
 
+        let client = aws_sdk_dynamodb::Client::new(config);
         Ok(DynamoClient {
             table_name: table_name.to_string(),
             client,
@@ -206,38 +209,30 @@ impl AsyncAccountHandler for DynamoClient {
     }
 
     async fn deposit_async(&self, account_id: &str, amount: f64) -> Result<f64, AccountError> {
-        if let Ok(mut acct) = self.get_account_by_id_async(account_id).await {
-            let dep_res = acct.deposit(amount);
-            match dep_res {
-                Ok(balance) => {
-                    let balance_res = self.update_balance(account_id, balance).await;
-                    match balance_res {
-                        Ok(b) => return Ok(b),
-                        Err(e) => return Err(e),
-                    }
-                }
-                Err(e) => return Err(e),
-            }
+        let acct_res = self.get_account_by_id_async(account_id).await;
+        if let Err(e) = acct_res {
+            return Err(AccountError::RetrievalError(format!("{}", e)));
         }
 
-        Err(AccountError::DepositError)
+        let mut acct = acct_res.unwrap();
+        let dep_res = acct.deposit(amount);
+        match dep_res {
+            Ok(balance) => self.update_balance(account_id, balance).await,
+            Err(e) => return Err(e),
+        }
     }
 
     async fn withdraw_async(&self, account_id: &str, amount: f64) -> Result<f64, AccountError> {
-        if let Ok(mut acct) = self.get_account_by_id_async(account_id).await {
-            let wd_res = acct.withdraw(amount);
-            match wd_res {
-                Ok(balance) => {
-                    let withdraw_res = self.update_balance(account_id, balance).await;
-                    match withdraw_res {
-                        Ok(b) => return Ok(b),
-                        Err(e) => return Err(e),
-                    }
-                }
-                Err(e) => return Err(e),
-            }
+        let acct_res = self.get_account_by_id_async(account_id).await;
+        if let Err(e) = acct_res {
+            return Err(AccountError::RetrievalError(format!("{}", e)));
         }
 
-        Err(AccountError::DoesNotExist)
+        let mut acct = acct_res.unwrap();
+        let wd_res = acct.withdraw(amount);
+        match wd_res {
+            Ok(balance) => self.update_balance(account_id, balance).await,
+            Err(e) => Err(e),
+        }
     }
 }

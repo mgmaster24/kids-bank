@@ -1,4 +1,4 @@
-use crate::db::sqlite_db::Client;
+use crate::db::Client;
 use kids_bank_lib::AccountHandler;
 
 pub fn get_accounts(client: &Client, args: &[String]) {

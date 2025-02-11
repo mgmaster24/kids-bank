@@ -1,6 +1,6 @@
 use std::io::{self, Write};
 
-use crate::{commands::command::get_commands, db::sqlite_db::Client};
+use crate::{commands::get_commands, db::Client};
 
 pub fn start_repl(client: &Client) {
     println!("Welcome to Kids Bank");
@@ -23,7 +23,7 @@ pub fn start_repl(client: &Client) {
         let cmds = get_commands();
         let cmd = cmds.get(command_name);
         match cmd {
-            Some(c) => (c.callback)(client, args),
+            Some(c) => c.call(client, args),
             None => {
                 println!("No command with that name. Try again. Type help for more information.");
             }
@@ -32,9 +32,9 @@ pub fn start_repl(client: &Client) {
 }
 
 fn clean_input(input: &str) -> Vec<String> {
-    return input
+    input
         .to_lowercase()
         .split_whitespace()
         .map(String::from)
-        .collect();
+        .collect()
 }

@@ -1,4 +1,4 @@
-use kids_bank_lib::{dynamo_client::DynamoClient, AsyncAccountHandler};
+use kids_bank_lib::{AsyncAccountHandler, DynamoClient};
 use lambda_runtime::{run, service_fn, Error, LambdaEvent};
 use serde_json::Value;
 use std::env;

@@ -3,7 +3,7 @@ mod db;
 mod repl;
 
 fn main() {
-    match db::sqlite_db::Client::open("./kids-bank.db") {
+    match db::Client::open("./kids-bank.db") {
         Ok(conn) => {
             let tbl_res = conn.create_table();
             if tbl_res.is_err() {

@@ -1,7 +1,8 @@
-pub mod accounts;
-pub mod dynamo_client;
-pub mod users;
-use crate::accounts::{Account, AccountError};
+mod accounts;
+mod dynamoclient;
+mod users;
+pub use crate::accounts::{Account, AccountError};
+pub use crate::dynamoclient::DynamoClient;
 
 use async_trait::async_trait;
 

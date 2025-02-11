@@ -1,4 +1,4 @@
-use kids_bank_lib::dynamo_client::DynamoClient;
+use kids_bank_lib::DynamoClient;
 use lambda_http::{run, service_fn, Body, Error, Request, Response};
 use serde::Deserialize;
 use std::env;

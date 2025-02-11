@@ -1,14 +1,16 @@
+use crate::commands::{create_account, deposit, get_account, get_accounts, withdraw};
+use crate::db::Client;
 use std::{collections::BTreeMap, process};
-
-use crate::db::sqlite_db::Client;
-
-use super::{
-    cmd_create_account, cmd_deposit, cmd_get_account_by_email, cmd_get_accounts, cmd_withdraw,
-};
 
 pub struct Command {
     description: String,
-    pub callback: fn(client: &Client, args: &[String]),
+    callback: fn(client: &Client, args: &[String]),
+}
+
+impl Command {
+    pub fn call(&self, client: &Client, args: &[String]) {
+        (self.callback)(client, args);
+    }
 }
 
 pub fn get_commands() -> BTreeMap<String, Command> {
@@ -39,35 +41,35 @@ pub fn get_commands() -> BTreeMap<String, Command> {
         "list".to_string(),
         Command {
             description: String::from("Retrieves all the available account for Kids Bank."),
-            callback: cmd_get_accounts::get_accounts,
+            callback: get_accounts,
         },
     );
     commands.insert(
         "create".to_string(),
         Command {
             description: String::from("Creates a Kids Bank account."),
-            callback: cmd_create_account::create_account,
+            callback: create_account,
         },
     );
     commands.insert(
         "retrieve".to_string(),
         Command {
             description: String::from("Get an account by email."),
-            callback: cmd_get_account_by_email::get_account,
+            callback: get_account,
         },
     );
     commands.insert(
         "deposit".to_string(),
         Command {
             description: String::from("Deposit amount to an account."),
-            callback: cmd_deposit::deposit,
+            callback: deposit,
         },
     );
     commands.insert(
         "withdraw".to_string(),
         Command {
             description: String::from("Withdraw from and account."),
-            callback: cmd_withdraw::withdraw,
+            callback: withdraw,
         },
     );
 
