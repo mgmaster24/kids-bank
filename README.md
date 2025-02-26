@@ -1,2 +1,3 @@
 # Kids Bank
-Update Me!
+This is an app I wrote for tracking the random money my young kids acquire.  There are READMEs in
+each section for a more in-depth breakdown of the specific component. 
