@@ -41,18 +41,17 @@ struct Statement {
 async fn custom_authorizer(
     event: LambdaEvent<TokenAuthorizerEvent>,
 ) -> Result<AuthResponse, Error> {
-    let token_opt = event.payload.authorization_token.strip_prefix("Bearer ");
-    let auth_token = match token_opt {
-        Some(t) => t,
-        None => return Err("Missing authorization token".to_string().into()),
-    };
+    let auth_token = event
+        .payload
+        .authorization_token
+        .strip_prefix("Bearer ")
+        .ok_or_else(|| "Missing authorization token".to_string())?;
 
-    let token_secret_res = get_token_secret().await;
-    if let Err(e) = token_secret_res {
-        return Err(format!("Failed to get token secret. error: {}", e).into());
-    }
+    let token_secret = get_token_secret()
+        .await
+        .map_err(|e| format!("Failed to get token secret. error: {}", e))?;
 
-    validate_token(auth_token, &token_secret_res.unwrap()).map(|claims| AuthResponse {
+    validate_token(auth_token, &token_secret).map(|claims| AuthResponse {
         principal_id: claims.sub().to_string(),
         policy_document: create_policy(&event.payload.method_arn),
     })

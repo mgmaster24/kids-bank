@@ -5,28 +5,23 @@ use std::env;
 
 async fn update_account_balances(_event: LambdaEvent<Value>) -> Result<(), Error> {
     let config = aws_config::load_from_env().await;
-    let table_name = env::var("TABLE_NAME").expect("TABLE_NAME must be set");
-    let dc_res = DynamoClient::new(&config, &table_name);
-    if dc_res.is_err() {
-        return Err("Couldn't create DynamoClient".into());
-    }
-
-    let dc = dc_res.unwrap();
-    let accts_res = dc.get_accounts_async().await;
-    match accts_res {
-        Ok(accts) => {
-            for ele in accts {
-                let amount: f64 = ele.balance * ele.current_apr;
-                let acct_res = dc.deposit_async(&ele.id, amount).await;
-                if acct_res.is_err() {
-                    return Err(format!("Couldn't update balance for account {}", &ele.id).into());
-                }
-            }
-
-            Ok(())
+    let table_name = env::var("TABLE_NAME").map_err(|_| "TABLE_NAME must be set")?;
+    let dc =
+        DynamoClient::new(&config, &table_name).map_err(|_| "Failed to create DynamoClient")?;
+    let accts = dc
+        .get_accounts_async()
+        .await
+        .map_err(|e| format!("Failed to get accounts {}", e))?;
+    for ele in &accts {
+        if let Err(e) = dc
+            .deposit_async(&ele.id, ele.balance * ele.current_apr)
+            .await
+        {
+            return Err(format!("Couldn't update balance for account {}: {}", ele.id, e).into());
         }
-        Err(e) => Err(format!("Failed to get accounts {}", e).into()),
     }
+
+    Ok(())
 }
 
 #[tokio::main]

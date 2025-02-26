@@ -1,5 +1,7 @@
 mod secretsmanager;
 
+use http::StatusCode;
+use lambda_http::Error;
 pub use secretsmanager::get_token_secret;
 
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
@@ -20,4 +22,9 @@ impl Claims {
     pub fn exp(&self) -> usize {
         self.exp
     }
+}
+
+pub fn response_error(status: u16, msg: &str) -> Error {
+    let status_code = StatusCode::from_u16(status).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
+    Error::from(format!("{}: {}", status_code, msg))
 }

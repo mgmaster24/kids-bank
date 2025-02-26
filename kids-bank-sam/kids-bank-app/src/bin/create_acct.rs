@@ -1,4 +1,5 @@
 use kids_bank_lib::DynamoClient;
+use kids_bank_sam::response_error;
 use lambda_http::{run, service_fn, Body, Error, Request, Response};
 use serde::Deserialize;
 use std::env;
@@ -15,32 +16,19 @@ struct CreateAccountRequestBody {
 
 async fn create_acct(request: Request) -> Result<Response<Body>, Error> {
     let config = aws_config::load_from_env().await;
-    let table_name = env::var("TABLE_NAME").expect("TABLE_NAME must be set");
-    let dc_res = DynamoClient::new(&config, &table_name);
-    if dc_res.is_err() {
-        return Err("Failed to create DynamoClient".into());
-    }
-
-    let dc = dc_res.unwrap();
-    match request.into_body() {
-        Body::Text(t) => {
-            let d_body: Result<CreateAccountRequestBody, serde_json::Error> =
-                serde_json::from_str(&t);
-            if let Err(e) = d_body {
-                return Err(format!("Failed to desrialize the request body. error {}", e).into());
-            }
-
-            let c = d_body.unwrap();
-            let acct_res = dc.create_new_account(&c.name, &c.email, &c.password).await;
-            match acct_res {
-                Ok(_) => Ok(Response::builder()
-                    .status(200)
-                    .body("account created".into())?),
-                Err(e) => Err(format!("Failed to create account {}", e).into()),
-            }
-        }
-        _ => Err("Failed to read body for request".into()),
-    }
+    let table_name =
+        env::var("TABLE_NAME").map_err(|_| response_error(500, "TABLE_NAME must be set"))?;
+    let body_bytes = request.body().to_vec();
+    let req_body: CreateAccountRequestBody = serde_json::from_slice(&body_bytes)
+        .map_err(|e| response_error(400, &format!("Invalid request body: {}", e)))?;
+    let dc = DynamoClient::new(&config, &table_name)
+        .map_err(|_| response_error(500, "Failed to create DynamoClient"))?;
+    dc.create_new_account(&req_body.name, &req_body.email, &req_body.password)
+        .await
+        .map_err(|e| response_error(500, &format!("Failed to create account {}", e)))?;
+    Ok(Response::builder()
+        .status(200)
+        .body("account created".into())?)
 }
 
 #[tokio::main]

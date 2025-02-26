@@ -1,6 +1,6 @@
 use jsonwebtoken::{encode, EncodingKey, Header};
 use kids_bank_lib::{AsyncAccountHandler, DynamoClient};
-use kids_bank_sam::{get_token_secret, Claims};
+use kids_bank_sam::{get_token_secret, response_error, Claims};
 use lambda_http::{run, service_fn, Body, Error, Request, Response};
 use serde::Deserialize;
 use std::env;
@@ -15,71 +15,42 @@ struct LoginRequestBody {
 
 async fn login(request: Request) -> Result<Response<Body>, Error> {
     let config = aws_config::load_from_env().await;
-    let table_name = env::var("TABLE_NAME").expect("TABLE_NAME must be set");
-    let body = request.into_body();
-    let dc_res = DynamoClient::new(&config, &table_name);
-    if dc_res.is_err() {
-        return Err("Failed to create DynamoClient".into());
+    let table_name =
+        env::var("TABLE_NAME").map_err(|_| response_error(500, "TABLE_NAME must be set"))?;
+    let body_bytes = request.body().to_vec();
+    let lr: LoginRequestBody = serde_json::from_slice(&body_bytes)
+        .map_err(|e| response_error(400, &format!("Invalid request body, {}", e)))?;
+    let dc = DynamoClient::new(&config, &table_name)
+        .map_err(|e| response_error(500, &format!("Failed to create DynamoClient, {}", e)))?;
+    let account = dc
+        .get_account_by_email_async(&lr.email)
+        .await
+        .map_err(|_| response_error(404, "Account not found"))?;
+    if !account.user.are_pws_equal(&lr.password) {
+        return Err(response_error(401, "Incorrect password"));
     }
-    let dc = dc_res.unwrap();
-
-    match body {
-        Body::Text(t) => {
-            let d_body: Result<LoginRequestBody, serde_json::Error> = serde_json::from_str(&t);
-            if let Err(e) = d_body {
-                return Err(format!("Failed to desrialize the request body, {}", e).into());
-            }
-
-            let lr = d_body.unwrap();
-            let acct_res = dc.get_account_by_email_async(&lr.email).await;
-            if let Err(e) = acct_res {
-                let err_str = format!("Failed to find account by email. {e:#}");
-                return Ok(Response::builder().status(500).body(err_str.into())?);
-            }
-
-            let account = acct_res.unwrap();
-            if !account.user.are_pws_equal(&lr.password) {
-                return Ok(Response::builder()
-                    .status(401)
-                    .body("Incorrect password".into())?);
-            }
-
-            let token_secret_res = get_token_secret().await;
-            if let Err(e) = token_secret_res {
-                return Ok(Response::builder().status(500).body(e.into())?);
-            }
-
-            let claims = Claims::new(
-                account.user.email().to_string(),
-                chrono::Utc::now()
-                    .checked_add_signed(chrono::Duration::hours(1))
-                    .unwrap()
-                    .timestamp() as usize,
-            );
-
-            let token = encode(
-                &Header::default(),
-                &claims,
-                &EncodingKey::from_secret(token_secret_res.unwrap().as_ref()),
-            );
-
-            if let Err(e) = token {
-                return Ok(Response::builder()
-                    .status(500)
-                    .body(format!("Failed to generate token. error: {}", e).into())?);
-            }
-
-            let json_resp = serde_json::json!({"token": token.unwrap(), "account": account});
-            let serialized = serde_json::to_string(&json_resp)?;
-            Ok(Response::builder()
-                .status(200)
-                .header("Content-Type", "application/json")
-                .body(serialized.into())?)
-        }
-        _ => Ok(Response::builder()
-            .status(500)
-            .body("Unexpected body type".into())?),
-    }
+    let token_secret = get_token_secret()
+        .await
+        .map_err(|_| response_error(500, "Failed to retrieve token secret"))?;
+    let claims = Claims::new(
+        account.user.email().to_string(),
+        chrono::Utc::now()
+            .checked_add_signed(chrono::Duration::hours(1))
+            .unwrap()
+            .timestamp() as usize,
+    );
+    let token = encode(
+        &Header::default(),
+        &claims,
+        &EncodingKey::from_secret(token_secret.as_bytes()),
+    )
+    .map_err(|e| response_error(500, &format!("Failed to generate token: {}", e)))?;
+    let json_resp = serde_json::json!({"token": token, "account": account});
+    let serialized = serde_json::to_string(&json_resp)?;
+    Ok(Response::builder()
+        .status(200)
+        .header("Content-Type", "application/json")
+        .body(serialized.into())?)
 }
 
 #[tokio::main]
