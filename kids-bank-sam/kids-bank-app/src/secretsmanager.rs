@@ -1,7 +1,3 @@
-// Use this code snippet in your app
-// If you need more information about configurations or implementing the sample code, visit the AWS docs:
-// https://docs.aws.amazon.com/sdk-for-rust/latest/dg/getting-started.html
-
 use aws_config::{self, BehaviorVersion, Region};
 use serde::Deserialize;
 
