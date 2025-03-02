@@ -6,7 +6,7 @@ each section for a more in-depth breakdown of the specific component.
 [Kids Bank Sam Application](kids-bank-cli/README.md)
 
 ## kids-bank-fe
-[Kids Bank Sam Application](kids-bank-fe/README.md)
+[Kids Bank Flutter Application](kids-bank-fe/kids_bank_app/README.md)
 
 ## kids-bank-lib
 [Kids Bank Sam Application](kids-bank-lib/README.md)
