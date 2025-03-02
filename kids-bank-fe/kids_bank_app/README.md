@@ -1,6 +1,6 @@
 # kids_bank_app
 
-A new Flutter project.
+A Flutter project for building the Kids Bank UI for Mobile, Web and Desktop.
 
 ## Getting Started
 

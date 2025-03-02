@@ -11,6 +11,15 @@ pub struct DynamoClient {
     client: aws_sdk_dynamodb::Client,
 }
 
+impl Clone for DynamoClient {
+    fn clone(&self) -> Self {
+        Self {
+            table_name: self.table_name.clone(),
+            client: self.client.clone(),
+        }
+    }
+}
+
 impl DynamoClient {
     pub fn new(config: &aws_config::SdkConfig, table_name: &str) -> Result<Self, String> {
         if table_name.is_empty() {
@@ -42,26 +51,30 @@ impl DynamoClient {
         attr: &str,
         attr_val: AttributeValue,
     ) -> Result<Account, AccountError> {
-        match &self
+        let res = self
             .client
             .get_item()
             .table_name(self.table_name())
             .key(attr, attr_val.clone())
             .send()
             .await
-        {
-            Ok(res) => {
-                let attr_map = res.item().expect("expected HashMap of AttributeValues");
-                Ok(self.get_account_from_attributes(attr_map))
-            }
-            Err(e) => {
-                let table_name = self.table_name();
-                Err(AccountError::RetrievalError(format!(
-                    "Failed to retrieve item for {attr} from {table_name} for value {:?}. Reason: {:?}",
-                    attr_val.clone(), e
-                )))
-            }
-        }
+            .map_err(|e| {
+                AccountError::RetrievalError(format!(
+                    "Failed to retrieve item for {attr} from {} for value {:?}. Reason: {:?}",
+                    self.table_name(),
+                    attr_val.clone(),
+                    e
+                ))
+            })?;
+        let attr_map = res.item().ok_or_else(|| {
+            AccountError::RetrievalError(format!(
+                "Item for {attr} with value {:?} not found in table {}",
+                attr_val,
+                self.table_name()
+            ))
+        })?;
+
+        self.get_account_from_attributes(attr_map)
     }
 
     async fn update_balance(&self, id: &str, balance: f64) -> Result<f64, AccountError> {
@@ -83,35 +96,42 @@ impl DynamoClient {
         }
     }
 
-    fn get_account_from_attributes(&self, attr_map: &HashMap<String, AttributeValue>) -> Account {
+    fn get_account_from_attributes(
+        &self,
+        attr_map: &HashMap<String, AttributeValue>,
+    ) -> Result<Account, AccountError> {
         let id = attr_map
             .get("id")
-            .expect("expected id value to exist")
+            .ok_or(AccountError::MissingAttribute("id".to_string()))?
             .as_s()
-            .unwrap();
+            .map_err(|_| AccountError::InvalidAttributeType("id".to_string()))?;
+
         let email = attr_map
             .get("email")
-            .expect("expected email value to exist")
+            .ok_or(AccountError::MissingAttribute("email".to_string()))?
             .as_s()
-            .unwrap();
+            .map_err(|_| AccountError::InvalidAttributeType("email".to_string()))?;
+
         let name = attr_map
             .get("name")
-            .expect("expected name value to exist")
+            .ok_or(AccountError::MissingAttribute("name".to_string()))?
             .as_s()
-            .unwrap();
+            .map_err(|_| AccountError::InvalidAttributeType("name".to_string()))?;
+
         let pw = attr_map
             .get("password")
-            .expect("expected password value to exist")
+            .ok_or(AccountError::MissingAttribute("password".to_string()))?
             .as_s()
-            .unwrap();
+            .map_err(|_| AccountError::InvalidAttributeType("password".to_string()))?;
+
         let balance = attr_map
             .get("balance")
-            .expect("expected balance value to exist")
+            .ok_or(AccountError::MissingAttribute("balance".to_string()))?
             .as_n()
-            .unwrap()
+            .map_err(|_| AccountError::InvalidAttributeType("balance".to_string()))?
             .parse::<f64>()
-            .expect("expect balance to be f64");
-        create_acct_from_attributes(id, name, email, pw, balance)
+            .map_err(|_| AccountError::InvalidBalanceFormat)?;
+        Ok(create_acct_from_attributes(id, name, email, pw, balance))
     }
 }
 
@@ -128,8 +148,7 @@ impl AsyncAccountHandler for DynamoClient {
         }
 
         if let Ok(account) = create_user_account(name, email, password) {
-            match &self
-                .client
+            self.client
                 .put_item()
                 .table_name(self.table_name())
                 .item("id", AttributeValue::S(account.id.to_string()))
@@ -139,10 +158,8 @@ impl AsyncAccountHandler for DynamoClient {
                 .item("balance", AttributeValue::N(account.balance.to_string()))
                 .send()
                 .await
-            {
-                Ok(_) => return Ok(account),
-                Err(e) => return Err(AccountError::CreationError(format!("{e:#}"))),
-            }
+                .map_err(|e| AccountError::CreationError(format!("{e:#}")))?;
+            return Ok(account);
         }
 
         Err(AccountError::CreationError(
@@ -151,26 +168,21 @@ impl AsyncAccountHandler for DynamoClient {
     }
 
     async fn get_accounts_async(&self) -> Result<Vec<Account>, AccountError> {
-        match &self
+        let res = self
             .client
             .scan()
             .table_name(self.table_name())
             .send()
             .await
-        {
-            Ok(res) => {
-                // get vector of accounts
-                let mut accounts: Vec<Account> = Vec::new();
-                if let Some(items) = &res.items {
-                    for i in items {
-                        let account = self.get_account_from_attributes(i);
-                        accounts.push(account);
-                    }
-                }
-                return Ok(accounts);
-            }
-            Err(e) => return Err(AccountError::RetrievalError(format!("{e:#}"))),
-        }
+            .map_err(|e| AccountError::RetrievalError(format!("{e:#}")))?;
+
+        res.items.map_or(Ok(Vec::new()), |items| {
+            let accounts: Result<Vec<_>, _> = items
+                .into_iter()
+                .map(|item| self.get_account_from_attributes(&item))
+                .collect();
+            accounts
+        })
     }
 
     async fn get_account_by_id_async(&self, id: &str) -> Result<Account, AccountError> {
@@ -179,7 +191,7 @@ impl AsyncAccountHandler for DynamoClient {
     }
 
     async fn get_account_by_email_async(&self, email: &str) -> Result<Account, AccountError> {
-        match &self
+        let res = self
             .client
             .query()
             .table_name(self.table_name())
@@ -189,50 +201,32 @@ impl AsyncAccountHandler for DynamoClient {
             .expression_attribute_values(":email_value", AttributeValue::S(email.to_string()))
             .send()
             .await
-        {
-            Ok(res) => {
-                if let Some(items) = &res.items {
-                    if let Some(item) = items.iter().next() {
-                        Ok(self.get_account_from_attributes(item))
-                    } else {
-                        Err(AccountError::DoesNotExist)
-                    }
-                } else {
-                    Err(AccountError::DoesNotExist)
-                }
-            }
-            Err(err) => Err(AccountError::RetrievalError(format!(
-                "DynamoDB query error: {}",
-                err
-            ))),
-        }
+            .map_err(|e| AccountError::RetrievalError(format!("DynamoDB query error: {}", e)))?;
+        let item = res
+            .items
+            .and_then(|items| items.into_iter().next())
+            .ok_or(AccountError::DoesNotExist)?;
+
+        self.get_account_from_attributes(&item)
     }
 
     async fn deposit_async(&self, account_id: &str, amount: f64) -> Result<f64, AccountError> {
-        let acct_res = self.get_account_by_id_async(account_id).await;
-        if let Err(e) = acct_res {
-            return Err(AccountError::RetrievalError(format!("{}", e)));
-        }
+        let mut acct = self
+            .get_account_by_id_async(account_id)
+            .await
+            .map_err(|e| AccountError::RetrievalError(format!("{}", e)))?;
 
-        let mut acct = acct_res.unwrap();
-        let dep_res = acct.deposit(amount);
-        match dep_res {
-            Ok(balance) => self.update_balance(account_id, balance).await,
-            Err(e) => return Err(e),
-        }
+        let balance = acct.deposit(amount)?;
+        self.update_balance(account_id, balance).await
     }
 
     async fn withdraw_async(&self, account_id: &str, amount: f64) -> Result<f64, AccountError> {
-        let acct_res = self.get_account_by_id_async(account_id).await;
-        if let Err(e) = acct_res {
-            return Err(AccountError::RetrievalError(format!("{}", e)));
-        }
+        let mut acct = self
+            .get_account_by_id_async(account_id)
+            .await
+            .map_err(|e| AccountError::RetrievalError(format!("{}", e)))?;
 
-        let mut acct = acct_res.unwrap();
-        let wd_res = acct.withdraw(amount);
-        match wd_res {
-            Ok(balance) => self.update_balance(account_id, balance).await,
-            Err(e) => Err(e),
-        }
+        let balance = acct.withdraw(amount)?;
+        self.update_balance(account_id, balance).await
     }
 }

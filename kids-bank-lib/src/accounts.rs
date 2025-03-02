@@ -17,6 +17,9 @@ pub enum AccountError {
     CreationError(String),
     RetrievalError(String),
     BalanceError(String),
+    MissingAttribute(String),
+    InvalidAttributeType(String),
+    InvalidBalanceFormat,
     Overdraft,
     NegativeAmount,
     DepositError,
@@ -28,16 +31,33 @@ impl fmt::Display for AccountError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             AccountError::CreationError(s) => {
-                let err_msg = "Failed to create account! Reason: ".to_owned() + s;
+                let err_msg = format!("Failed to create account! Reason: {}", s);
                 f.write_str(&err_msg)
             }
             AccountError::RetrievalError(s) => {
-                let err_msg = "Failed to get account! Reason: ".to_owned() + s;
+                let err_msg = format!("Failed to get account! Reason: {}", s);
                 f.write_str(&err_msg)
             }
             AccountError::BalanceError(s) => {
-                let err_msg = "Failed to get account! Reason: ".to_owned() + s;
+                let err_msg = format!("Failed to update balance for account! Reason: {}", s);
                 f.write_str(&err_msg)
+            }
+            AccountError::MissingAttribute(s) => {
+                let err_msg = format!(
+                    "Failed to create account from returned attributes.  {} is missing",
+                    s
+                );
+                f.write_str(&err_msg)
+            }
+            AccountError::InvalidAttributeType(s) => {
+                let err_msg = format!(
+                    "Failed to create account from returned attributes.  {} is invalid",
+                    s
+                );
+                f.write_str(&err_msg)
+            }
+            AccountError::InvalidBalanceFormat => {
+                write!(f, "Float is expected for balance.")
             }
             AccountError::Overdraft => {
                 write!(f, "Cannot withdraw funds! Account would be overdrafted.")

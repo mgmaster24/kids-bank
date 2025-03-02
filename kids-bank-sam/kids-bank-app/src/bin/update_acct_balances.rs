@@ -1,3 +1,4 @@
+use futures::future::join_all;
 use kids_bank_lib::{AsyncAccountHandler, DynamoClient};
 use lambda_runtime::{run, service_fn, Error, LambdaEvent};
 use serde_json::Value;
@@ -12,12 +13,22 @@ async fn update_account_balances(_event: LambdaEvent<Value>) -> Result<(), Error
         .get_accounts_async()
         .await
         .map_err(|e| format!("Failed to get accounts {}", e))?;
-    for ele in &accts {
-        if let Err(e) = dc
-            .deposit_async(&ele.id, ele.balance * ele.current_apr)
-            .await
-        {
-            return Err(format!("Couldn't update balance for account {}: {}", ele.id, e).into());
+    let futures = accts.iter().map(|acct| {
+        let dc_ref = dc.clone();
+        async move {
+            dc_ref
+                .deposit_async(&acct.id, acct.current_apr * acct.balance)
+                .await
+                .map_err(|e| format!("Couldn't update balance for account {}: {}", acct.id, e))
+        }
+    });
+
+    let results = join_all(futures).await;
+    let errors: Vec<String> = results.into_iter().filter_map(Result::err).collect();
+    if !errors.is_empty() {
+        eprintln!("Failed to update balance for the following accounts:");
+        for e in errors {
+            eprintln!("{}", e);
         }
     }
 
