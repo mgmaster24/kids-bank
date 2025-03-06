@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 //import 'package:fluttertoast/fluttertoast.dart';
 import 'app_config.dart';
+import 'account.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -14,7 +15,7 @@ class LoginScreen extends StatefulWidget {
 
 class LoginScreenState extends State<LoginScreen> {
   bool isSignUp = false;
-  final String _baseUrl = AppConfig.baseUrl;
+  final String _baseUrl = AppConfig.BASE_API_URL;
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
@@ -28,6 +29,7 @@ class LoginScreenState extends State<LoginScreen> {
   bool hasUppercase = false;
   bool hasNumber = false;
   bool isLongEnough = false;
+
   bool passwordsMatch = false;
   bool isEmailValid = false;
 
@@ -55,8 +57,10 @@ class LoginScreenState extends State<LoginScreen> {
         hasNumber = password.contains(RegExp(r'[0-9]'));
         isLongEnough = password.length >= 8;
         passwordsMatch = _passwordController.text == _confirmPasswordController.text;
-    });  
+      });  
     }
+
+    setState(() {});
   }
 
   void _validateConfirmPassword(String confirmPassword) {
@@ -81,17 +85,7 @@ class LoginScreenState extends State<LoginScreen> {
   );
 }
 
-  //void _showToast(String message) {
-  //  Fluttertoast.showToast(
-  //    msg: message,
-  //    toastLength: Toast.LENGTH_SHORT,
-  //    gravity: ToastGravity.BOTTOM,
-  //    backgroundColor: Colors.red,
-  //    textColor: Colors.white,
-  //  );
-  //}
-
-  Future<void> _login() async {
+  Future<void> _login(BuildContext context) async {
     final response = await http.post(
       Uri.parse("$_baseUrl/login"),
       body: jsonEncode({
@@ -106,6 +100,12 @@ class LoginScreenState extends State<LoginScreen> {
     } else {
       final data = jsonDecode(response.body);
       await _storage.write(key: "token", value: data["token"]);
+      final account = Account.fromJson(data["account"]);
+      if (context.mounted) {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (context) => AccountScreen(account: account)),
+        );
+      }
     }
   }
 
@@ -230,7 +230,7 @@ class LoginScreenState extends State<LoginScreen> {
                 ],               
               const SizedBox(height: 20),
               ElevatedButton(
-                onPressed: isFormValid ? (isSignUp ? _signUp : _login) : null,
+                onPressed: isFormValid ? () => (isSignUp ? _signUp() : _login(context)) : null,
                 child: Text(isSignUp ? 'Sign Up' : 'Login'),
               ),
               TextButton(

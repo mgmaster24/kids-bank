@@ -22,9 +22,12 @@ async fn deposit(request: Request) -> Result<Response<Body>, Error> {
         .deposit_async(id, amount)
         .await
         .map_err(|e| response_error(500, &format!("Failed to withdraw {}", e)))?;
+    let json_resp = serde_json::json!({"balance": amount});
+    let serialized = serde_json::to_string(&json_resp)?;
     Ok(Response::builder()
         .status(200)
-        .body(format!("{} deposited", amount).into())?)
+        .header("Content-Type", "application/json")
+        .body(serialized.into())?)
 }
 
 #[tokio::main]
