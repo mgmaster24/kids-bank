@@ -1,8 +1,9 @@
-# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-# !!!! TOKEN_SECRET_ARN is an environment variable the needs to be !!!!
-# !!!! set before running deploy script!                           !!!!
-# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 REGION="us-east-1"
+
+if [ -z $1 ]; then
+  echo "Token ARN must be provided"
+  exit 1
+fi
 
 # Deploy the custom authorizer
 sam deploy \
@@ -42,14 +43,14 @@ CUSTOM_AUTH_PK="CustomAuthorizerFunctionArn"
 ACCOUNTS_TABLE_PK="AccountsTableName"
 
 # Deploy the Kids Bank API
-echo "TOKEN_ARN: $TOKEN_SECRET_ARN"
+echo "TOKEN_ARN: $1"
 sam deploy \
   --template-file out/api/template.yaml \
   --stack-name kids-bank-api \
   --parameter-overrides \
   ParameterKey=$CUSTOM_AUTH_PK,ParameterValue=$CUSTOM_AUTHORIZER_FUNCTION_ARN \
   ParameterKey=$ACCOUNTS_TABLE_PK,ParameterValue=$ACCOUNT_TABLE_NAME \
-  ParameterKey=TokenSecretArn,ParameterValue=$TOKEN_SECRET_ARN \
+  ParameterKey=TokenSecretArn,ParameterValue=$1 \
   --region $REGION \
   --s3-bucket kids-bank-api \
   --capabilities CAPABILITY_IAM

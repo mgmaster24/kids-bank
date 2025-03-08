@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'app_config.dart';
 import 'string_exts.dart';
+import 'login.dart';
 
 class User {
   final String name;
@@ -49,12 +50,8 @@ class AccountScreen extends StatefulWidget {
 }
 
 class AccountScreenState extends State<AccountScreen> {
-  final String _baseUrl = AppConfig.BASE_API_URL;
-  final FlutterSecureStorage _storage = const FlutterSecureStorage(
-    aOptions: AndroidOptions(encryptedSharedPreferences: true),
-    iOptions: IOSOptions(accessibility: KeychainAccessibility.first_unlock),
-    lOptions: LinuxOptions(),
-  );
+  final String _baseUrl = AppConfig.baseApiUrl;
+  final FlutterSecureStorage _storage = const FlutterSecureStorage();
 
   void _showSnackbar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
@@ -117,6 +114,16 @@ class AccountScreenState extends State<AccountScreen> {
       },
     );
   }
+
+  void _logout() async {
+    await _storage.delete(key: "token");
+    if (context.mounted) {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (context) => LoginScreen()),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -124,6 +131,12 @@ class AccountScreenState extends State<AccountScreen> {
         title: Text("${widget.account.user.name.capitalize()}'s Account Details"),
         backgroundColor: Colors.blue,
         foregroundColor: Colors.white,
+        actions: [
+          IconButton(
+            icon: Icon(Icons.logout),
+            onPressed: _logout,
+          ),
+        ],
       ),
       body: Center(
         child: Column(

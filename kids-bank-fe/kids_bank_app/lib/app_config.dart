@@ -1,3 +1,3 @@
 class AppConfig {
-  static const String BASE_API_URL = String.fromEnvironment('BASE_API_URL');
+  static const String baseApiUrl = String.fromEnvironment('BASE_API_URL');
 }
